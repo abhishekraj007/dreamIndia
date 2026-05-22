@@ -138,6 +138,8 @@ export default defineSchema({
     planningGoal: v.string(),
     beforeStorageId: v.optional(v.id("_storage")),
     afterStorageId: v.optional(v.id("_storage")),
+    beforeR2Key: v.optional(v.string()),
+    afterR2Key: v.optional(v.string()),
     googleMapsUrl: v.optional(v.string()),
     tags: v.array(v.string()),
     votes: v.number(),
@@ -149,6 +151,14 @@ export default defineSchema({
     .index("by_issue", ["issueType"])
     .index("by_status", ["status"])
     .index("by_created", ["createdAt"]),
+
+  reportVotes: defineTable({
+    userId: v.string(),
+    reportId: v.id("transformationReports"),
+    createdAt: v.number(),
+  })
+    .index("by_user_and_report", ["userId", "reportId"])
+    .index("by_report", ["reportId"]),
 
   // Runtime app configuration shared by web, admin, and native clients.
   appConfig: defineTable({

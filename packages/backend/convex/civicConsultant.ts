@@ -1,25 +1,40 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { authComponent } from "./lib/betterAuth";
 
 export const generateProposal = action({
   args: {
     reportId: v.id("transformationReports"),
   },
+  returns: v.object({ proposal: v.string() }),
   handler: async (ctx, { reportId }): Promise<{ proposal: string }> => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new ConvexError("Sign in before generating a planning proposal.");
+    }
+
     // Cast api to any to break TypeScript circularity
     const anyApi = api as any;
 
     // 1. Fetch the report details from the database
-    const report: any = await ctx.runQuery(anyApi.reports.getReport, { id: reportId });
+    const report: any = await ctx.runQuery(anyApi.reports.getReport, {
+      id: reportId,
+    });
     if (!report) {
       throw new Error("Report not found.");
     }
+    if (report.aiProposal) {
+      return { proposal: report.aiProposal };
+    }
 
     // 2. Fetch OpenRouter API key
-    const openrouterKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+    const openrouterKey =
+      process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
     if (!openrouterKey) {
-      throw new Error("Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is configured in Convex environment variables.");
+      throw new Error(
+        "Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is configured in Convex environment variables.",
+      );
     }
 
     // 3. Construct prompt for civic consultant
@@ -50,28 +65,33 @@ CRITICAL RULES:
 - Make the tone formal, engineering-focused, yet community-driven.`;
 
     // 4. Request OpenRouter google/gemini-3.1-flash-lite
-    const response: Response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openrouterKey}`,
-        "HTTP-Referer": "https://cockroachdreamindia.com",
-        "X-Title": "CockroachDreamIndia",
+    const response: Response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openrouterKey}`,
+          "HTTP-Referer": "https://cockroachdreamindia.com",
+          "X-Title": "CockroachDreamIndia",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.1-flash-lite",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-lite",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          }
-        ]
-      })
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenRouter API failed: ${response.statusText} - ${errorText}`);
+      throw new Error(
+        `OpenRouter API failed: ${response.statusText} - ${errorText}`,
+      );
     }
 
     const result: any = await response.json();
@@ -89,5 +109,5 @@ CRITICAL RULES:
     return {
       proposal: proposalMarkdown,
     };
-  }
+  },
 });

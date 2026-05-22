@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useLoginModal } from "@/hooks/use-login-modal";
 import { Button } from "./ui/button";
 import { ModeToggle } from "./mode-toggle";
 import { MapPinned, Menu, Sparkles } from "lucide-react";
@@ -10,6 +11,7 @@ import { useState } from "react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -17,13 +19,15 @@ import {
 
 const links = [
   { to: "/" as const, label: "Atlas" },
+  { to: "/atlas" as const, label: "Map" },
   { to: "/#transform" as const, label: "Transform" },
   { to: "/dashboard" as const, label: "Reports" },
   { to: "/docs" as const, label: "Plan" },
 ];
 
 export default function Header() {
-  const router = useRouter();
+  const pathname = usePathname();
+  const { openLogin } = useLoginModal();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: session } = authClient.useSession();
 
@@ -34,12 +38,12 @@ export default function Header() {
           <span className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground">
             <MapPinned className="size-5" />
           </span>
-          <span className="text-lg font-semibold tracking-tight text-foreground">
+          <span className="hidden text-lg font-semibold tracking-tight text-foreground sm:inline">
             cockroachdreamindia
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground lg:flex">
           {links.map(({ to, label }) => (
             <Link key={to} href={to} className="hover:text-primary">
               {label}
@@ -60,7 +64,7 @@ export default function Header() {
           ) : (
             <Button
               size="sm"
-              onClick={() => router.push("/auth?redirectTo=/")}
+              onClick={() => openLogin(pathname || "/")}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
             >
               <Sparkles className="size-4" />
@@ -69,7 +73,7 @@ export default function Header() {
           )}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
+              <Button variant="outline" size="icon" className="lg:hidden">
                 <Menu className="size-4" />
                 <span className="sr-only">Open navigation</span>
               </Button>
@@ -77,6 +81,7 @@ export default function Header() {
             <SheetContent side="right">
               <SheetHeader>
                 <SheetTitle>cockroachdreamindia</SheetTitle>
+                <SheetDescription>Primary navigation links</SheetDescription>
               </SheetHeader>
               <nav className="flex flex-col gap-3 px-4">
                 {links.map(({ to, label }) => (

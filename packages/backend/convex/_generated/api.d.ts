@@ -29,6 +29,7 @@ import type * as features_subscriptions_actions from "../features/subscriptions/
 import type * as features_subscriptions_index from "../features/subscriptions/index.js";
 import type * as features_subscriptions_mutations from "../features/subscriptions/mutations.js";
 import type * as features_subscriptions_queries from "../features/subscriptions/queries.js";
+import type * as geo from "../geo.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as lib_betterAuth_component from "../lib/betterAuth/component.js";
@@ -44,6 +45,8 @@ import type * as purchases from "../purchases.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as reports from "../reports.js";
 import type * as todos from "../todos.js";
+import type * as transform from "../transform.js";
+import type * as transformAccess from "../transformAccess.js";
 import type * as uploads from "../uploads.js";
 import type * as user from "../user.js";
 import type * as util from "../util.js";
@@ -76,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   "features/subscriptions/index": typeof features_subscriptions_index;
   "features/subscriptions/mutations": typeof features_subscriptions_mutations;
   "features/subscriptions/queries": typeof features_subscriptions_queries;
+  geo: typeof geo;
   healthCheck: typeof healthCheck;
   http: typeof http;
   "lib/betterAuth/component": typeof lib_betterAuth_component;
@@ -91,6 +95,8 @@ declare const fullApi: ApiFromModules<{
   pushNotifications: typeof pushNotifications;
   reports: typeof reports;
   todos: typeof todos;
+  transform: typeof transform;
+  transformAccess: typeof transformAccess;
   uploads: typeof uploads;
   user: typeof user;
   util: typeof util;

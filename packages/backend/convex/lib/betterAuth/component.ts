@@ -33,15 +33,15 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
         });
       },
       onUpdate: async () =>
-        // ctx,
-        // oldUser,
-        // newUser
-        {
-          /**
-           * NOTE:
-           * Both old and new documents are available
-           */
-        },
+      // ctx,
+      // oldUser,
+      // newUser
+      {
+        /**
+         * NOTE:
+         * Both old and new documents are available
+         */
+      },
       onDelete: async (ctx, authUser) => {
         /**
          * NOTE:

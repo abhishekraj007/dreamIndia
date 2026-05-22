@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "./ui/sonner";
+import { LoginModalProvider } from "@/hooks/use-login-modal";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -27,7 +28,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-          {children}
+          <LoginModalProvider>{children}</LoginModalProvider>
         </ConvexBetterAuthProvider>
       </QueryClientProvider>
       <Toaster richColors />

@@ -5,7 +5,7 @@ import { AuthenticatedLayout } from "@/components/authenticated-layout";
 import Header from "@/components/header";
 import { usePathname } from "next/navigation";
 
-const publicRoutes = ["/", "/pricing", "/docs", "/auth/sign-in", "/auth/sign-up"];
+const publicRoutes = ["/", "/pricing", "/docs", "/auth", "/auth/sign-in", "/auth/sign-up"];
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useConvexAuth();

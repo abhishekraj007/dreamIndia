@@ -1,19 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useConvexAuth, useMutation, useQuery, useAction } from "convex/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { Id } from "@convex-starter/backend/convex/_generated/dataModel";
 import { api } from "@convex-starter/backend/convex/_generated/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { authClient } from "@/lib/auth-client";
+import { issueTypeBadge } from "@/lib/badge-styles";
 import { demoReports, demoStats, issueOptions } from "@/lib/dream-data";
-import type { DreamReport, DreamStats, IssueType, Severity } from "@/lib/dream-types";
+import type {
+  DreamReport,
+  DreamStats,
+  IssueType,
+  Severity,
+} from "@/lib/dream-types";
+import { readGpsFromImage } from "@/lib/exif";
+import { LoginModal } from "@/components/login-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  BookOpen,
   Camera,
   CheckCircle2,
+  Copy,
   FileImage,
+  FileText,
   Layers3,
+  Loader2,
   LocateFixed,
   MapPin,
   Navigation,
@@ -23,13 +37,10 @@ import {
   Upload,
   Vote,
   WandSparkles,
-  BookOpen,
-  Copy,
-  FileText,
   X,
-  Check,
-  Loader2,
 } from "lucide-react";
+
+const reportIdTable = "transformationReports";
 
 type Props = {
   initialReports: DreamReport[];
@@ -47,6 +58,17 @@ type Draft = {
   description: string;
   planningGoal: string;
   tags: string;
+};
+
+type AutoField = keyof Draft;
+
+type ReverseGeocodeResult = {
+  formattedAddress: string | null;
+  locationName: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postalCode: string | null;
 };
 
 const emptyDraft: Draft = {
@@ -68,6 +90,23 @@ function getReportId(report: DreamReport) {
   return report._id ?? report.id ?? report.title;
 }
 
+function isAuthError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+  return (
+    message.includes("sign in") ||
+    message.includes("unauth") ||
+    message.includes("not authenticated")
+  );
+}
+
+function shouldReplaceLocation(value: string, defaultValue: string) {
+  const trimmed = value.trim();
+  return !trimmed || trimmed === defaultValue;
+}
+
 async function uploadToConvex(url: string, blob: Blob) {
   const response = await fetch(url, {
     method: "POST",
@@ -87,21 +126,33 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
     getReportId(initialReports[0] ?? demoReports[0]),
   );
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [autoDetectedFields, setAutoDetectedFields] = useState<Set<AutoField>>(
+    new Set(),
+  );
   const [file, setFile] = useState<File | null>(null);
   const [beforePreview, setBeforePreview] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [beforeStorageId, setBeforeStorageId] = useState<Id<"_storage"> | null>(
+    null,
+  );
+  const [afterStorageId, setAfterStorageId] = useState<Id<"_storage"> | null>(
+    null,
+  );
+  const [beforeR2Key, setBeforeR2Key] = useState<string | null>(null);
+  const [afterR2Key, setAfterR2Key] = useState<string | null>(null);
   const [divider, setDivider] = useState(52);
   const [isTransforming, setIsTransforming] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  // AI states
-  const [beforeStorageId, setBeforeStorageId] = useState<Id<"_storage"> | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [proposal, setProposal] = useState<string | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [optimisticVotes, setOptimisticVotes] = useState<
+    Record<string, { voted: boolean; votes: number }>
+  >({});
 
   const { isAuthenticated } = useConvexAuth();
   const { data: session } = authClient.useSession();
@@ -115,20 +166,33 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   const createReport = useMutation(api.reports.createReport);
   const generateUploadUrl = useMutation(api.reports.generateUploadUrl);
   const vote = useMutation(api.reports.vote);
-
-  const analyzePhoto = useAction(api.analysis.analyzeReportPhoto);
+  const transformImageAction = useAction(api.transform.transformImage);
+  const ensureStorageImageInR2 = useAction(
+    api.transform.ensureStorageImageInR2,
+  );
+  const reverseGeocode = useAction(api.geo.reverseGeocode);
   const generateCivicProposal = useAction(api.civicConsultant.generateProposal);
 
   const reports = (liveReports?.length ? liveReports : initialReports).map(
-    (report: any) => ({ ...report, id: getReportId(report) }),
+    (report) => ({ ...report, id: getReportId(report) }),
   ) as DreamReport[];
   const stats = liveStats ?? initialStats;
   const selectedReport =
     reports.find((report) => getReportId(report) === selectedReportId) ??
     reports[0] ??
     demoReports[0];
+  const selectedReportConvexId = selectedReport._id
+    ? (selectedReport._id as Id<typeof reportIdTable>)
+    : null;
+  const hasVoted = useQuery(
+    api.reports.hasVoted,
+    selectedReportConvexId ? { id: selectedReportConvexId } : "skip",
+  );
+
   const beforeImage = beforePreview ?? selectedReport.beforeImageUrl;
   const afterImage = generatedImage ?? selectedReport.afterImageUrl;
+  const hasLatLng = Boolean(draft.lat && draft.lng);
+  const canUseStreetView = hasLatLng && !file && !isTransforming;
   const mapQuery = encodeURIComponent(
     draft.lat && draft.lng
       ? `${draft.lat},${draft.lng}`
@@ -153,140 +217,265 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   function updateDraft<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
+    setAutoDetectedFields((current) => {
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
   }
 
-  // Touch/pointer dragging event handlers for premium slider
-  const handleSliderMove = (clientX: number, containerRect: DOMRect) => {
-    const x = clientX - containerRect.left;
-    const percentage = Math.max(0, Math.min(100, (x / containerRect.width) * 100));
-    setDivider(percentage);
-  };
+  function markAutoDetected(fields: Array<AutoField>) {
+    setAutoDetectedFields((current) => {
+      const next = new Set(current);
+      fields.forEach((field) => next.add(field));
+      return next;
+    });
+  }
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    const rect = e.currentTarget.getBoundingClientRect();
-    handleSliderMove(e.clientX, rect);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
+  function openLoginForAuthError(error: unknown) {
+    if (isAuthError(error)) {
+      setLoginModalOpen(true);
+    }
+  }
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    handleSliderMove(e.clientX, rect);
-  };
+  function applyAnalysis(analysis: {
+    description: string;
+    planningGoal: string;
+    severity: Severity;
+    tags: Array<string>;
+  }) {
+    setDraft((current) => ({
+      ...current,
+      description: analysis.description,
+      planningGoal: analysis.planningGoal,
+      severity: analysis.severity,
+      tags: analysis.tags.join(", "),
+    }));
+    markAutoDetected(["description", "planningGoal", "severity", "tags"]);
+  }
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsDragging(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
-  };
+  function applyReverseGeocodeResult(
+    result: ReverseGeocodeResult,
+    coords?: { lat: number; lng: number },
+  ) {
+    const changedFields: Array<AutoField> = [];
+    setDraft((current) => {
+      const next = { ...current };
+      if (coords) {
+        next.lat = coords.lat.toFixed(6);
+        next.lng = coords.lng.toFixed(6);
+        changedFields.push("lat", "lng");
+      }
+      if (
+        result.locationName &&
+        shouldReplaceLocation(current.locationName, emptyDraft.locationName)
+      ) {
+        next.locationName = result.locationName;
+        changedFields.push("locationName");
+      }
+      if (
+        result.formattedAddress &&
+        shouldReplaceLocation(current.address, emptyDraft.address)
+      ) {
+        next.address = result.formattedAddress;
+        changedFields.push("address");
+      }
+      return next;
+    });
+    if (changedFields.length) {
+      markAutoDetected(changedFields);
+    }
+  }
+
+  async function reverseGeocodeAndPatch(coords: { lat: number; lng: number }) {
+    const result = await reverseGeocode(coords);
+    applyReverseGeocodeResult(result, coords);
+    return result;
+  }
+
+  async function uploadFileForTransform(nextFile: File) {
+    const uploadUrl = await generateUploadUrl();
+    return await uploadToConvex(uploadUrl, nextFile);
+  }
+
+  async function runTransform(args: {
+    photoStorageId?: Id<"_storage">;
+    lat?: number;
+    lng?: number;
+    locationName?: string;
+  }) {
+    const result = await transformImageAction({
+      photoStorageId: args.photoStorageId,
+      lat: args.lat,
+      lng: args.lng,
+      locationName: args.locationName || draft.locationName,
+      issueType: draft.issueType,
+      planningGoal: draft.planningGoal,
+      notes: draft.description,
+    });
+
+    setBeforeStorageId(result.beforeStorageId);
+    setAfterStorageId(result.afterStorageId);
+    setBeforeR2Key(result.beforeR2Key ?? null);
+    setAfterR2Key(result.afterR2Key ?? null);
+    setBeforePreview(result.beforeUrl);
+    setGeneratedImage(result.afterUrl);
+    setDivider(48);
+    applyAnalysis(result.analysis);
+    setMessage(`Transformed with ${result.model}.`);
+  }
 
   async function onFileChange(nextFile: File | null) {
     setFile(nextFile);
     setGeneratedImage(null);
-    setMessage(null);
+    setAfterStorageId(null);
     setBeforeStorageId(null);
+    setBeforeR2Key(null);
+    setAfterR2Key(null);
+    setMessage(null);
+
     if (!nextFile) {
       setBeforePreview(null);
       return;
     }
+
     setBeforePreview(URL.createObjectURL(nextFile));
-    
-    // Auto-analyze photo via Convex Action + Gemini 3.1 Flash-Lite
-    setIsAnalyzing(true);
-    try {
-      const uploadUrl = await generateUploadUrl();
-      const storageId = await uploadToConvex(uploadUrl, nextFile);
-      setBeforeStorageId(storageId);
-      
-      const analysis = await analyzePhoto({ storageId });
-      setDraft((curr) => ({
-        ...curr,
-        description: analysis.description,
-        planningGoal: analysis.planningGoal,
-        severity: analysis.severity as Severity,
-        tags: analysis.tags.join(", "),
-      }));
-      setMessage("Street analysis completed! Form auto-filled with details.");
-    } catch (error) {
-      console.error("AI photo analysis failed:", error);
-      setMessage("Photo uploaded, but automatic AI street analysis failed. Feel free to fill details manually.");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }
+    setIsTransforming(true);
+    setIsLocating(true);
 
-  async function handleGenerateProposal() {
-    if (!selectedReport._id) {
-      setMessage("Please save the report to the Convex database before generating a proposal.");
-      return;
-    }
-    
-    setProposal(null);
-    setIsProposalModalOpen(true);
-    setIsGeneratingProposal(true);
-    
     try {
-      if (selectedReport.aiProposal) {
-        setProposal(selectedReport.aiProposal);
-        return;
+      let nextCoords: { lat: number; lng: number } | undefined;
+      let nextLocationName = draft.locationName;
+      const gps = await readGpsFromImage(nextFile);
+      if (gps) {
+        nextCoords = gps;
+        const geocode = await reverseGeocodeAndPatch(gps);
+        nextLocationName = geocode.locationName || nextLocationName;
       }
-      
-      const res = await generateCivicProposal({ reportId: selectedReport._id as Id<"transformationReports"> });
-      setProposal(res.proposal);
-    } catch (err) {
-      console.error("Proposal generation failed:", err);
-      setMessage("Failed to generate AI proposal. Please try again.");
-      setIsProposalModalOpen(false);
+      setIsLocating(false);
+
+      const storageId = await uploadFileForTransform(nextFile);
+      setBeforeStorageId(storageId);
+      await runTransform({
+        photoStorageId: storageId,
+        lat: nextCoords?.lat,
+        lng: nextCoords?.lng,
+        locationName: nextLocationName,
+      });
+    } catch (error) {
+      console.error("Upload analysis and transform failed:", error);
+      openLoginForAuthError(error);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Photo upload or automatic transformation failed.",
+      );
     } finally {
-      setIsGeneratingProposal(false);
+      setIsLocating(false);
+      setIsTransforming(false);
     }
   }
 
-  function useCurrentLocation() {
+  async function useCurrentLocation() {
     if (!navigator.geolocation) {
       setMessage("Location is not available in this browser.");
       return;
     }
+    setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        updateDraft("lat", position.coords.latitude.toFixed(6));
-        updateDraft("lng", position.coords.longitude.toFixed(6));
-        setMessage("Location captured. Add a place name before saving.");
+      async (position) => {
+        try {
+          await reverseGeocodeAndPatch({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setMessage("Location captured and reverse geocoded.");
+        } catch (error) {
+          setDraft((current) => ({
+            ...current,
+            lat: position.coords.latitude.toFixed(6),
+            lng: position.coords.longitude.toFixed(6),
+          }));
+          markAutoDetected(["lat", "lng"]);
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Location captured, but reverse geocoding failed.",
+          );
+        } finally {
+          setIsLocating(false);
+        }
       },
-      () => setMessage("Location permission was not granted."),
+      () => {
+        setIsLocating(false);
+        setMessage("Location permission was not granted.");
+      },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
 
+  async function handleUseStreetView() {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (!draft.lat || !draft.lng) {
+      setMessage("Set latitude and longitude before using Street View.");
+      return;
+    }
+
+    setIsTransforming(true);
+    setMessage(null);
+    setFile(null);
+    setAfterStorageId(null);
+    setAfterR2Key(null);
+    setGeneratedImage(null);
+
+    try {
+      await runTransform({
+        lat: Number(draft.lat),
+        lng: Number(draft.lng),
+      });
+    } catch (error) {
+      console.error("Street View transform failed:", error);
+      openLoginForAuthError(error);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Street View transform failed.",
+      );
+    } finally {
+      setIsTransforming(false);
+    }
+  }
+
   async function transformImage() {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     setIsTransforming(true);
     setMessage(null);
     try {
-      const formData = new FormData();
+      if (beforeStorageId) {
+        await runTransform({ photoStorageId: beforeStorageId });
+        return;
+      }
       if (file) {
-        formData.append("photo", file);
+        const storageId = await uploadFileForTransform(file);
+        setBeforeStorageId(storageId);
+        await runTransform({ photoStorageId: storageId });
+        return;
       }
-      formData.append("locationName", draft.locationName);
-      formData.append("issueType", draft.issueType);
-      formData.append("planningGoal", draft.planningGoal);
-      formData.append("notes", draft.description);
-
-      const response = await fetch("/api/transform", {
-        method: "POST",
-        body: formData,
-      });
-      const json = (await response.json()) as {
-        imageUrl?: string;
-        model?: string;
-        error?: string;
-      };
-      if (!response.ok || !json.imageUrl) {
-        throw new Error(json.error || "Image transform failed.");
+      if (draft.lat && draft.lng) {
+        await runTransform({ lat: Number(draft.lat), lng: Number(draft.lng) });
+        return;
       }
-      setGeneratedImage(json.imageUrl);
-      setDivider(48);
-      setMessage(`Transformed with ${json.model ?? "OpenAI image model"}.`);
+      setMessage("Upload a photo or set coordinates before transforming.");
     } catch (error) {
+      console.error("Image transform failed:", error);
+      openLoginForAuthError(error);
       setMessage(error instanceof Error ? error.message : "Transform failed.");
     } finally {
       setIsTransforming(false);
@@ -295,23 +484,25 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   async function saveReport() {
     if (!isAuthenticated) {
+      setLoginModalOpen(true);
       setMessage("Sign in to save reports to the shared Convex atlas.");
       return;
     }
     setIsSaving(true);
     setMessage(null);
     try {
-      const activeBeforeStorageId = beforeStorageId ?? (
-        file && beforePreview
-          ? await uploadToConvex(await generateUploadUrl(), file)
-          : undefined
-      );
-      const afterStorageId = generatedImage
-        ? await uploadToConvex(
-            await generateUploadUrl(),
-            await (await fetch(generatedImage)).blob(),
-          )
-        : undefined;
+      const activeBeforeStorageId =
+        beforeStorageId ??
+        (file ? await uploadFileForTransform(file) : undefined);
+      let activeBeforeR2Key = beforeR2Key;
+
+      if (activeBeforeStorageId && !activeBeforeR2Key) {
+        const persistedBeforeImage = await ensureStorageImageInR2({
+          storageId: activeBeforeStorageId,
+        });
+        activeBeforeR2Key = persistedBeforeImage.r2Key;
+        setBeforeR2Key(persistedBeforeImage.r2Key);
+      }
 
       await createReport({
         title: draft.title,
@@ -324,7 +515,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
         description: draft.description,
         planningGoal: draft.planningGoal,
         beforeStorageId: activeBeforeStorageId ?? undefined,
-        afterStorageId,
+        afterStorageId: afterStorageId ?? undefined,
+        beforeR2Key: activeBeforeR2Key ?? undefined,
+        afterR2Key: afterR2Key ?? undefined,
         tags: draft.tags
           .split(",")
           .map((tag) => tag.trim())
@@ -332,11 +525,121 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
       });
       setMessage("Saved to the live Convex atlas.");
     } catch (error) {
+      openLoginForAuthError(error);
       setMessage(error instanceof Error ? error.message : "Save failed.");
     } finally {
       setIsSaving(false);
     }
   }
+
+  async function handleGenerateProposal() {
+    if (!selectedReport._id) {
+      setMessage("Save the report before generating a proposal.");
+      return;
+    }
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
+    setProposal(null);
+    setIsProposalModalOpen(true);
+    setIsGeneratingProposal(true);
+
+    try {
+      if (selectedReport.aiProposal) {
+        setProposal(selectedReport.aiProposal);
+        return;
+      }
+      const res = await generateCivicProposal({
+        reportId: selectedReport._id as Id<"transformationReports">,
+      });
+      setProposal(res.proposal);
+    } catch (error) {
+      console.error("Proposal generation failed:", error);
+      openLoginForAuthError(error);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate AI proposal.",
+      );
+      setIsProposalModalOpen(false);
+    } finally {
+      setIsGeneratingProposal(false);
+    }
+  }
+
+  async function handleVote() {
+    if (!selectedReportConvexId) {
+      setMessage("Demo reports cannot be voted on until saved.");
+      return;
+    }
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+
+    const reportKey = selectedReportConvexId;
+    const currentVotes =
+      optimisticVotes[reportKey]?.votes ?? selectedReport.votes;
+    const currentVoted = optimisticVotes[reportKey]?.voted ?? hasVoted ?? false;
+    setOptimisticVotes((current) => ({
+      ...current,
+      [reportKey]: {
+        voted: !currentVoted,
+        votes: Math.max(0, currentVotes + (currentVoted ? -1 : 1)),
+      },
+    }));
+
+    try {
+      const result = await vote({ id: selectedReportConvexId });
+      setOptimisticVotes((current) => ({
+        ...current,
+        [reportKey]: result,
+      }));
+    } catch (error) {
+      openLoginForAuthError(error);
+      setOptimisticVotes((current) => ({
+        ...current,
+        [reportKey]: { voted: currentVoted, votes: currentVotes },
+      }));
+      setMessage(error instanceof Error ? error.message : "Vote failed.");
+    }
+  }
+
+  const displayedSelectedVotes = selectedReportConvexId
+    ? (optimisticVotes[selectedReportConvexId]?.votes ?? selectedReport.votes)
+    : selectedReport.votes;
+  const displayedSelectedVoted = selectedReportConvexId
+    ? (optimisticVotes[selectedReportConvexId]?.voted ?? hasVoted ?? false)
+    : false;
+
+  const handleSliderMove = (clientX: number, containerRect: DOMRect) => {
+    const x = clientX - containerRect.left;
+    const percentage = Math.max(
+      0,
+      Math.min(100, (x / containerRect.width) * 100),
+    );
+    setDivider(percentage);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    const rect = event.currentTarget.getBoundingClientRect();
+    handleSliderMove(event.clientX, rect);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    handleSliderMove(event.clientX, rect);
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(false);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -356,71 +659,96 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-muted px-3 py-3 text-sm font-medium hover:bg-card">
-              <Camera className="size-4" />
-              Camera
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <UploadLabel icon={<Camera className="size-4" />} label="Camera">
               <input
                 className="sr-only"
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+                onChange={(event) =>
+                  onFileChange(event.target.files?.[0] ?? null)
+                }
               />
-            </label>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-muted px-3 py-3 text-sm font-medium hover:bg-card">
-              <Upload className="size-4" />
-              Upload
+            </UploadLabel>
+            <UploadLabel icon={<Upload className="size-4" />} label="Upload">
               <input
                 className="sr-only"
                 type="file"
                 accept="image/*"
-                onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+                onChange={(event) =>
+                  onFileChange(event.target.files?.[0] ?? null)
+                }
               />
-            </label>
+            </UploadLabel>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 justify-center gap-2"
+              onClick={handleUseStreetView}
+              disabled={!canUseStreetView}
+            >
+              <Layers3 className="size-4" />
+              Street View
+            </Button>
           </div>
 
           <div className="mt-5 space-y-3">
-            <Input
-              value={draft.title}
-              onChange={(event) => updateDraft("title", event.target.value)}
-              aria-label="Report title"
-            />
-            <Input
-              value={draft.locationName}
-              onChange={(event) =>
-                updateDraft("locationName", event.target.value)
-              }
-              aria-label="Location name"
-            />
-            <Input
-              value={draft.address}
-              onChange={(event) => updateDraft("address", event.target.value)}
-              aria-label="Address"
-              placeholder="Address or landmark"
-            />
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <AutoFieldShell show={autoDetectedFields.has("title")}>
               <Input
-                value={draft.lat}
-                onChange={(event) => updateDraft("lat", event.target.value)}
-                aria-label="Latitude"
-                placeholder="Latitude"
+                value={draft.title}
+                onChange={(event) => updateDraft("title", event.target.value)}
+                aria-label="Report title"
               />
+            </AutoFieldShell>
+            <AutoFieldShell show={autoDetectedFields.has("locationName")}>
               <Input
-                value={draft.lng}
-                onChange={(event) => updateDraft("lng", event.target.value)}
-                aria-label="Longitude"
-                placeholder="Longitude"
+                value={draft.locationName}
+                onChange={(event) =>
+                  updateDraft("locationName", event.target.value)
+                }
+                aria-label="Location name"
               />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={useCurrentLocation}
-                aria-label="Use current location"
-              >
-                <LocateFixed className="size-4" />
-              </Button>
+            </AutoFieldShell>
+            <AutoFieldShell show={autoDetectedFields.has("address")}>
+              <Input
+                value={draft.address}
+                onChange={(event) => updateDraft("address", event.target.value)}
+                aria-label="Address"
+                placeholder="Address or landmark"
+              />
+            </AutoFieldShell>
+            <div>
+              {(autoDetectedFields.has("lat") ||
+                autoDetectedFields.has("lng")) && <AutoDetectedPill />}
+              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <Input
+                  value={draft.lat}
+                  onChange={(event) => updateDraft("lat", event.target.value)}
+                  aria-label="Latitude"
+                  placeholder="Latitude"
+                />
+                <Input
+                  value={draft.lng}
+                  onChange={(event) => updateDraft("lng", event.target.value)}
+                  aria-label="Longitude"
+                  placeholder="Longitude"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={useCurrentLocation}
+                  disabled={isLocating}
+                  aria-label="Use current location"
+                >
+                  {isLocating ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <LocateFixed className="size-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -437,37 +765,50 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   </option>
                 ))}
               </select>
-              <select
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                value={draft.severity}
-                onChange={(event) =>
-                  updateDraft("severity", event.target.value as Severity)
-                }
-                aria-label="Severity"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
+              <div>
+                {autoDetectedFields.has("severity") && <AutoDetectedPill />}
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                  value={draft.severity}
+                  onChange={(event) =>
+                    updateDraft("severity", event.target.value as Severity)
+                  }
+                  aria-label="Severity"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
             </div>
-            <textarea
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              value={draft.description}
-              onChange={(event) => updateDraft("description", event.target.value)}
-              aria-label="Current condition notes"
-            />
-            <textarea
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              value={draft.planningGoal}
-              onChange={(event) => updateDraft("planningGoal", event.target.value)}
-              aria-label="Transformation goal"
-            />
-            <Input
-              value={draft.tags}
-              onChange={(event) => updateDraft("tags", event.target.value)}
-              aria-label="Tags"
-            />
+            <AutoFieldShell show={autoDetectedFields.has("description")}>
+              <textarea
+                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                value={draft.description}
+                onChange={(event) =>
+                  updateDraft("description", event.target.value)
+                }
+                aria-label="Current condition notes"
+              />
+            </AutoFieldShell>
+            <AutoFieldShell show={autoDetectedFields.has("planningGoal")}>
+              <textarea
+                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                value={draft.planningGoal}
+                onChange={(event) =>
+                  updateDraft("planningGoal", event.target.value)
+                }
+                aria-label="Transformation goal"
+              />
+            </AutoFieldShell>
+            <AutoFieldShell show={autoDetectedFields.has("tags")}>
+              <Input
+                value={draft.tags}
+                onChange={(event) => updateDraft("tags", event.target.value)}
+                aria-label="Tags"
+              />
+            </AutoFieldShell>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-2">
@@ -477,11 +818,24 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               disabled={isTransforming}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
             >
-              <WandSparkles className="size-4" />
+              {isTransforming ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <WandSparkles className="size-4" />
+              )}
               {isTransforming ? "Transforming" : "Transform"}
             </Button>
-            <Button type="button" variant="outline" onClick={saveReport} disabled={isSaving}>
-              <Send className="size-4" />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={saveReport}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
               {isSaving ? "Saving" : "Save"}
             </Button>
           </div>
@@ -493,25 +847,27 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
             {session?.user
               ? `Signed in as ${session.user.email}.`
-              : "You can preview transforms now. Sign in to save and share reports."}
+              : "Sign in to generate, save, vote, and share reports."}
           </p>
         </aside>
 
         <section className="flex min-h-0 flex-col gap-4">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_310px]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
             <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div>
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Current Google context
                   </p>
-                  <h2 className="text-lg font-semibold">{draft.locationName}</h2>
+                  <h2 className="truncate text-lg font-semibold">
+                    {draft.locationName}
+                  </h2>
                 </div>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
                 >
                   <Navigation className="size-4" />
                   Open
@@ -520,7 +876,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               <iframe
                 title="Current Google map context"
                 src={mapSrc}
-                className="h-[330px] w-full border-0"
+                className="h-[300px] w-full border-0 sm:h-[330px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -538,7 +894,10 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               </div>
               <div className="mt-5 space-y-3">
                 {planningChecklist.map((item) => (
-                  <div key={item} className="flex gap-2 text-sm text-primary-foreground/90">
+                  <div
+                    key={item}
+                    className="flex gap-2 text-sm text-primary-foreground/90"
+                  >
                     <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary-foreground" />
                     <span>{item}</span>
                   </div>
@@ -551,69 +910,72 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Before / Dream India after (Drag/Touch to Slide)
+                  Before / Dream India after
                 </p>
-                <h2 className="text-xl font-semibold">{selectedReport.title}</h2>
+                <h2 className="text-xl font-semibold">
+                  {selectedReport.title}
+                </h2>
               </div>
             </div>
-            <div 
-              className="relative aspect-[16/8] min-h-[310px] bg-muted cursor-ew-resize select-none group touch-none overflow-hidden"
+            <div
+              className="group relative aspect-[16/10] min-h-[260px] cursor-ew-resize touch-none select-none overflow-hidden bg-muted sm:aspect-[16/8] sm:min-h-[310px]"
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
             >
-              {afterImage && (
+              {afterImage ? (
                 <img
                   src={afterImage}
                   alt="Dream India transformed condition"
-                  className="absolute inset-0 size-full object-cover pointer-events-none"
+                  className="pointer-events-none absolute inset-0 size-full object-cover"
                 />
+              ) : (
+                <ImageFallback label="After image pending" />
               )}
-              {beforeImage && (
+              {beforeImage ? (
                 <img
                   src={beforeImage}
                   alt="Current bad infrastructure condition"
-                  className="absolute inset-0 size-full object-cover pointer-events-none"
+                  className="pointer-events-none absolute inset-0 size-full object-cover"
                   style={{ clipPath: `inset(0 ${100 - divider}% 0 0)` }}
                 />
+              ) : (
+                <ImageFallback
+                  label="Before image pending"
+                  clipped
+                  divider={divider}
+                />
               )}
-              
-              {/* Glowing vertical slider line */}
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] pointer-events-none"
+                className="pointer-events-none absolute bottom-0 top-0 w-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]"
                 style={{ left: `${divider}%` }}
               />
-              
-              {/* Glassmorphic dragging handle */}
               <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-10 rounded-full bg-white/20 backdrop-blur-xs border border-white/40 shadow-xl flex items-center justify-center pointer-events-none transition-transform duration-100 group-hover:scale-110 group-active:scale-95"
+                className="pointer-events-none absolute top-1/2 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/25 text-white shadow-xl backdrop-blur transition-transform duration-100 group-hover:scale-105"
                 style={{ left: `${divider}%` }}
               >
-                <div className="flex gap-0.5 items-center justify-center text-white font-bold select-none text-xs">
-                  <span>◀</span>
-                  <span>▶</span>
-                </div>
+                <Layers3 className="size-4" />
               </div>
-              
-              <div className="absolute left-3 top-3 rounded-md bg-black/65 px-3 py-1 text-xs font-semibold text-white pointer-events-none uppercase tracking-wider">
-                Current Condition
+              <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/65 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+                Current
               </div>
-              <div className="absolute right-3 top-3 rounded-md bg-emerald-600/90 px-3 py-1 text-xs font-semibold text-white pointer-events-none uppercase tracking-wider">
-                Dream India Vision
+              <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground">
+                Vision
               </div>
             </div>
-            <div className="flex justify-between items-center gap-2 border-t border-border px-4 py-3 bg-slate-50 dark:bg-slate-900/50">
-              <span className="text-xs text-muted-foreground font-medium">
-                {selectedReport._id ? "Live community report" : "Interactive demo report"}
+            <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs font-medium text-muted-foreground">
+                {selectedReport._id
+                  ? "Live community report"
+                  : "Interactive demo report"}
               </span>
               <Button
                 type="button"
-                variant="default"
                 size="sm"
                 onClick={handleGenerateProposal}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm transition"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <FileText className="size-4 mr-2" />
+                <FileText className="size-4" />
                 Generate AI Planning Proposal
               </Button>
             </div>
@@ -631,92 +993,89 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
             <Route className="size-5 text-primary" />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
+            <IssueFilterButton
+              active={selectedIssue === "all"}
               onClick={() => setSelectedIssue("all")}
-              className={`rounded-md border px-3 py-1.5 text-sm ${
-                selectedIssue === "all"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
             >
               All
-            </button>
+            </IssueFilterButton>
             {issueOptions.map((issue) => (
-              <button
+              <IssueFilterButton
                 key={issue.value}
-                type="button"
+                active={selectedIssue === issue.value}
                 onClick={() => setSelectedIssue(issue.value)}
-                className={`rounded-md border px-3 py-1.5 text-sm ${
-                  selectedIssue === issue.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-foreground hover:bg-muted"
-                }`}
               >
                 {issue.label}
-              </button>
+              </IssueFilterButton>
             ))}
           </div>
           <div className="mt-4 space-y-3">
-            {reports.map((report) => (
-              <button
-                key={getReportId(report)}
-                type="button"
-                onClick={() => setSelectedReportId(getReportId(report))}
-                className={`w-full rounded-lg border p-3 text-left transition ${
-                  getReportId(report) === getReportId(selectedReport)
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                <div className="flex gap-3">
-                  {report.beforeImageUrl ? (
-                    <img
-                      src={report.beforeImageUrl}
-                      alt=""
-                      className="size-16 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="grid size-16 place-items-center rounded-md bg-muted">
-                      <FileImage className="size-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {report.title}
-                    </p>
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                      {report.locationName}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{report.severity}</span>
-                      <span>•</span>
-                      <span>{report.votes} votes</span>
+            {reports.map((report) => {
+              const reportKey = getReportId(report);
+              const reportVotes = report._id
+                ? (optimisticVotes[report._id]?.votes ?? report.votes)
+                : report.votes;
+              return (
+                <button
+                  key={reportKey}
+                  type="button"
+                  onClick={() => setSelectedReportId(reportKey)}
+                  className={`w-full rounded-lg border p-3 text-left transition ${
+                    reportKey === getReportId(selectedReport)
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  <div className="flex gap-3">
+                    {report.beforeImageUrl ? (
+                      <img
+                        src={report.beforeImageUrl}
+                        alt=""
+                        className="size-16 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="grid size-16 place-items-center rounded-md bg-muted">
+                        <FileImage className="size-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {report.title}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                        {report.locationName}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{report.severity}</span>
+                        <span>/</span>
+                        <span>{reportVotes} votes</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant={displayedSelectedVoted ? "default" : "outline"}
             className="mt-4 w-full"
             disabled={!selectedReport._id}
-            onClick={() =>
-              selectedReport._id
-                ? vote({ id: selectedReport._id as Id<"transformationReports"> })
-                : setMessage("Demo reports cannot be voted on until saved.")
-            }
+            onClick={handleVote}
           >
-            <Vote className="size-4" />
-            Vote for priority
+            <Vote
+              className={`size-4 ${displayedSelectedVoted ? "fill-current" : ""}`}
+            />
+            {displayedSelectedVoted ? "Voted" : "Vote for priority"}
           </Button>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {displayedSelectedVotes.toLocaleString()} priority votes
+          </p>
         </aside>
       </section>
 
       <section className="mx-auto max-w-[1500px] px-4 pb-12">
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {reports.slice(0, 6).map((report) => (
             <article
               key={`grid-${getReportId(report)}`}
@@ -737,7 +1096,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-base font-semibold">{report.title}</h3>
-                  <span className="rounded-md bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground">
+                  <span
+                    className={`rounded-md border px-2 py-1 text-xs font-semibold ${issueTypeBadge(report.issueType)}`}
+                  >
                     {report.issueType}
                   </span>
                 </div>
@@ -750,69 +1111,58 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
         </div>
       </section>
 
-      {/* AI Proposal Document Modal */}
       {isProposalModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                <div className="rounded-lg bg-primary/15 p-2 text-primary">
                   <BookOpen className="size-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold leading-none">AI Civic Planning Proposal</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Formal petition to local municipality authorities</p>
+                  <h3 className="text-lg font-semibold leading-none">
+                    AI Civic Planning Proposal
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Formal petition to local municipality authorities
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsProposalModalOpen(false)}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition"
+                className="rounded-md p-1.5 text-muted-foreground transition hover:text-foreground"
               >
                 <X className="size-5" />
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0 bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 px-6 py-6">
               {isGeneratingProposal ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Loader2 className="size-12 animate-spin text-emerald-600 mb-4" />
-                  <h4 className="text-base font-semibold text-slate-800 dark:text-slate-200">
-                    Drafting Civic Transformation Petition
+                  <Loader2 className="mb-4 size-12 animate-spin text-primary" />
+                  <h4 className="text-base font-semibold text-foreground">
+                    Drafting civic transformation petition
                   </h4>
-                  <p className="text-sm text-muted-foreground max-w-sm mt-1 leading-relaxed">
-                    Analyzing site location, formulating modern engineering guidelines, and structuring citizens' endorsement...
+                  <p className="mt-1 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                    Analyzing site location, engineering constraints, and
+                    citizen impact.
                   </p>
-                  
-                  {/* Step Indicators */}
-                  <div className="mt-8 space-y-2.5 w-64 text-left text-xs font-medium text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-2">
-                      <div className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
-                      <span>Retrieving community report data</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-1.5 rounded-full bg-slate-300" />
-                      <span>Formulating structured municipal sections</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-1.5 rounded-full bg-slate-300" />
-                      <span>Styling professional Markdown</span>
-                    </div>
-                  </div>
                 </div>
               ) : proposal ? (
-                <div className="prose dark:prose-invert prose-emerald max-w-none text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                  {proposal}
+                <div className="prose prose-sm max-w-none text-foreground dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {proposal}
+                  </ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-center text-sm text-muted-foreground">No proposal generated.</p>
+                <p className="text-center text-sm text-muted-foreground">
+                  No proposal generated.
+                </p>
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card">
+            <div className="flex flex-col gap-3 border-t border-border bg-card px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs text-muted-foreground">
                 Document is stored securely in the Convex database.
               </span>
@@ -824,20 +1174,18 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   onClick={() => {
                     if (proposal) {
                       navigator.clipboard.writeText(proposal);
-                      setMessage("Proposal document copied to clipboard!");
+                      setMessage("Proposal document copied to clipboard.");
                     }
                   }}
                   disabled={!proposal}
-                  className="font-medium"
                 >
-                  <Copy className="size-4 mr-2" />
+                  <Copy className="size-4" />
                   Copy Document
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   onClick={() => setIsProposalModalOpen(false)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-medium"
                 >
                   Close
                 </Button>
@@ -846,7 +1194,106 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           </div>
         </div>
       )}
+
+      <LoginModal
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
+        returnUrl="/"
+      />
     </main>
+  );
+}
+
+function UploadLabel({
+  children,
+  icon,
+  label,
+}: {
+  children: ReactNode;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <label className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-muted px-3 text-sm font-medium hover:bg-card">
+      {icon}
+      {label}
+      {children}
+    </label>
+  );
+}
+
+function AutoDetectedPill() {
+  return (
+    <div className="mb-1 flex justify-end">
+      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+        auto-detected
+      </span>
+    </div>
+  );
+}
+
+function AutoFieldShell({
+  children,
+  show,
+}: {
+  children: ReactNode;
+  show: boolean;
+}) {
+  return (
+    <div>
+      {show && <AutoDetectedPill />}
+      {children}
+    </div>
+  );
+}
+
+function IssueFilterButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-md border px-3 py-1.5 text-sm ${
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-foreground hover:bg-muted"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ImageFallback({
+  label,
+  clipped,
+  divider,
+}: {
+  label: string;
+  clipped?: boolean;
+  divider?: number;
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 grid place-items-center bg-muted text-sm font-medium text-muted-foreground"
+      style={
+        clipped && divider !== undefined
+          ? { clipPath: `inset(0 ${100 - divider}% 0 0)` }
+          : undefined
+      }
+    >
+      <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm">
+        <Sparkles className="mx-auto mb-1 size-4 text-primary" />
+        {label}
+      </div>
+    </div>
   );
 }
 

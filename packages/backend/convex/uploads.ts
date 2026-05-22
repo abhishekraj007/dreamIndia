@@ -159,13 +159,16 @@ export const createUploadRecord = internalMutation({
     contentLength: v.number(),
     isNew: v.optional(v.boolean()),
   },
+  returns: v.object({
+    created: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("uploads")
       .withIndex("by_key", (q) => q.eq("key", args.key))
       .first();
     if (existing) {
-      return;
+      return { created: false };
     }
 
     const userProfile = await ctx.db
@@ -192,7 +195,7 @@ export const createUploadRecord = internalMutation({
           err,
         );
       }
-      return;
+      return { created: false };
     }
 
     await ctx.db.insert("uploads", {
@@ -209,6 +212,8 @@ export const createUploadRecord = internalMutation({
         uploadCount: currentCount + 1,
       });
     }
+
+    return { created: true };
   },
 });
 

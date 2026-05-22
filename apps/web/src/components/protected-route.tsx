@@ -1,9 +1,10 @@
 "use client";
 
 import { useConvexAuth } from "convex/react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLoginModal } from "@/hooks/use-login-modal";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,18 +38,21 @@ export function PageSkeleton() {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const router = useRouter();
   const pathname = usePathname();
+  const { openLogin } = useLoginModal();
   const { isAuthenticated, isLoading } = useConvexAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      const redirectUrl = `/auth?redirectTo=${encodeURIComponent(pathname)}`;
-      router.push(redirectUrl as "/");
+      openLogin(pathname || "/dashboard");
     }
-  }, [isLoading, isAuthenticated, pathname, router]);
+  }, [isLoading, isAuthenticated, pathname, openLogin]);
 
   if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (!isAuthenticated) {
     return <PageSkeleton />;
   }
 

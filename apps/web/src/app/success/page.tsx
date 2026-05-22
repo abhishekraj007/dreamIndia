@@ -40,8 +40,8 @@ export default function SuccessPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8 text-center">
-        <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-          <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
+        <div className="mx-auto w-16 h-16 bg-primary/15 rounded-full flex items-center justify-center">
+          <Check className="h-10 w-10 text-primary" />
         </div>
 
         <div className="space-y-3">

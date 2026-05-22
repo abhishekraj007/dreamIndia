@@ -1,9 +1,15 @@
 import type { MetadataRoute } from "next";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@convex-starter/backend/convex/_generated/api";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://convex-starter.app";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const reports = await fetchQuery(api.reports.listReportsForMap, {
+    limit: 5000,
+  }).catch(() => []);
+
   return [
     {
       url: siteUrl,
@@ -29,5 +35,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.7,
     },
+    ...reports.map((report) => ({
+      url: `${siteUrl}/r/${report._id}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
   ];
 }
