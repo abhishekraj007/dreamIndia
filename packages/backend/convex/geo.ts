@@ -128,3 +128,65 @@ export const reverseGeocode = action({
     };
   },
 });
+
+export const forwardGeocode = action({
+  args: {
+    query: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      lat: v.number(),
+      lng: v.number(),
+      formattedAddress: nullableString,
+      locationName: nullableString,
+    }),
+    v.null(),
+  ),
+  handler: async (_ctx, args) => {
+    const googleMapsKey = process.env.GOOGLE_MAPS_KEY;
+    if (!googleMapsKey) {
+      throw new ConvexError(
+        "GOOGLE_MAPS_KEY is not configured in Convex environment variables.",
+      );
+    }
+    const trimmed = args.query.trim();
+    if (!trimmed) return null;
+
+    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    url.searchParams.set("address", trimmed);
+    url.searchParams.set("region", "in");
+    url.searchParams.set("key", googleMapsKey);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      const body = await response.text();
+      throw new ConvexError(
+        `Forward geocoding failed: ${response.status} ${body}`,
+      );
+    }
+    const json = (await response.json()) as {
+      status?: string;
+      error_message?: string;
+      results?: Array<
+        GoogleGeocodeResult & {
+          geometry?: { location?: { lat: number; lng: number } };
+        }
+      >;
+    };
+    if (json.status === "ZERO_RESULTS") return null;
+    if (json.status && json.status !== "OK") {
+      throw new ConvexError(
+        `Forward geocoding failed: ${json.status}${json.error_message ? ` - ${json.error_message}` : ""}`,
+      );
+    }
+    const result = json.results?.[0];
+    const loc = result?.geometry?.location;
+    if (!loc) return null;
+    return {
+      lat: loc.lat,
+      lng: loc.lng,
+      formattedAddress: result?.formatted_address ?? null,
+      locationName: chooseLocationName(json.results ?? []),
+    };
+  },
+});

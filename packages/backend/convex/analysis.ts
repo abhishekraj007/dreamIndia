@@ -98,10 +98,12 @@ export async function runVisionAnalysis(
 Return EXACTLY this JSON structure:
 {
   "description": "A precise description of the bad condition shown in the image (e.g. broken pavement, heavy waterlogging, garbage dump, open sewer). Be objective.",
-  "planningGoal": "A practical, realistic urban planning solution to transform this space (e.g., covered drains with structured footpaths, cobblestone traffic calming, organized public trash bins with landscaping).",
+  "planningGoal": "A bold but realistic urban-planning transformation brief that would make this space feel world-class, highly walkable, clean, and well-organized while still fitting Indian context. Mention specific physical upgrades such as continuous footpaths, covered drains, tree pits, crossings, calmer carriageway design, organized parking, utility cleanup, lighting, and durable materials.",
   "severity": "low" | "medium" | "high" | "critical" (Assess based on immediate threat to public safety, walking access, and public hygiene),
   "tags": ["tag1", "tag2", "tag3"] (Provide 3 to 5 lowercase tags related to the problem, e.g. "footpath", "drainage", "garbage", "crossing")
 }
+
+The planningGoal should not be a minor cleanup. It should describe a coherent, premium, municipal-grade upgrade inspired by the quality of the best contemporary streets internationally, but adapted to Indian climate, scale, and street conditions.
 
 Do not wrap in markdown code blocks. Return ONLY the raw JSON object.`,
               },

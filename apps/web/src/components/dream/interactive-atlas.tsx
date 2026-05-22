@@ -17,6 +17,7 @@ import type {
 } from "@/lib/dream-types";
 import { readGpsFromImage } from "@/lib/exif";
 import { LoginModal } from "@/components/login-modal";
+import { SourcePreview } from "@/components/dream/source-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -193,16 +194,6 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   const afterImage = generatedImage ?? selectedReport.afterImageUrl;
   const hasLatLng = Boolean(draft.lat && draft.lng);
   const canUseStreetView = hasLatLng && !file && !isTransforming;
-  const mapQuery = encodeURIComponent(
-    draft.lat && draft.lng
-      ? `${draft.lat},${draft.lng}`
-      : draft.locationName || selectedReport.locationName,
-  );
-  const googleMapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const mapSrc =
-    googleMapsKey && draft.lat && draft.lng
-      ? `https://www.google.com/maps/embed/v1/streetview?key=${googleMapsKey}&location=${draft.lat},${draft.lng}&heading=210&pitch=0&fov=80`
-      : `https://www.google.com/maps?q=${mapQuery}&output=embed`;
 
   const planningChecklist = useMemo(
     () => [
@@ -643,8 +634,8 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto grid min-h-[calc(100vh-64px)] max-w-[1500px] gap-4 px-4 py-4 lg:grid-cols-[360px_minmax(0,1fr)_340px]">
-        <aside className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="mx-auto grid max-w-[1500px] gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 lg:grid-cols-[360px_minmax(0,1fr)_340px]">
+        <aside className="order-2 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4 lg:order-1">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -851,38 +842,43 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           </p>
         </aside>
 
-        <section className="flex min-h-0 flex-col gap-4">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
-            <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Current Google context
-                  </p>
-                  <h2 className="truncate text-lg font-semibold">
-                    {draft.locationName}
-                  </h2>
-                </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex shrink-0 items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
-                >
-                  <Navigation className="size-4" />
-                  Open
-                </a>
-              </div>
-              <iframe
-                title="Current Google map context"
-                src={mapSrc}
-                className="h-[300px] w-full border-0 sm:h-[330px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
+        <section className="order-1 flex min-h-0 flex-col gap-3 sm:gap-4 lg:order-2">
+          <SourcePreview
+            lat={draft.lat}
+            lng={draft.lng}
+            locationName={draft.locationName}
+            address={draft.address}
+            beforeImage={beforePreview}
+            hasUploadedFile={!!file}
+            onLocationResolved={({
+              coords,
+              formattedAddress,
+              locationName,
+            }) => {
+              const changed: Array<AutoField> = ["lat", "lng"];
+              setDraft((current) => {
+                const next = {
+                  ...current,
+                  lat: coords.lat.toFixed(6),
+                  lng: coords.lng.toFixed(6),
+                };
+                if (locationName) {
+                  next.locationName = locationName;
+                  changed.push("locationName");
+                }
+                if (formattedAddress) {
+                  next.address = formattedAddress;
+                  changed.push("address");
+                }
+                return next;
+              });
+              markAutoDetected(changed);
+            }}
+            onMessage={setMessage}
+          />
 
-            <div className="rounded-lg border border-border bg-primary p-4 text-primary-foreground shadow-sm">
+          <div className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+            <div className="hidden rounded-xl border border-border bg-primary p-4 text-primary-foreground shadow-sm xl:block">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
                 Live impact
               </p>
@@ -904,6 +900,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                 ))}
               </div>
             </div>
+            <div className="hidden xl:block" />
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -982,7 +979,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           </div>
         </section>
 
-        <aside className="rounded-lg border border-border bg-card p-4 shadow-sm">
+        <aside className="order-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4 lg:order-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">

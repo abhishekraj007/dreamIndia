@@ -36,27 +36,92 @@ const analysisResultValidator = v.object({
   tags: v.array(v.string()),
 });
 
+function buildIssueDesignDirectives(issueType: string) {
+  switch (issueType) {
+    case "roads":
+      return [
+        "Install continuous, level footpaths on both sides with clear curbs and accessible ramps.",
+        "Cover roadside drains and add frequent stormwater inlets with proper surface slope.",
+        "Calm the carriageway with a tighter, cleaner street section and organized curb management.",
+        "Add marked pedestrian crossings, bollards where needed, tree grates, and high-quality street lighting.",
+        "Organize parking so vehicles no longer block walking space or drainage edges.",
+      ];
+    case "rivers":
+      return [
+        "Create a clean and engineered river edge with flood-safe paving, railings, and shaded promenade zones.",
+        "Add trash interception, landscape stabilization, seating, and safer walking access.",
+        "Remove dumping, erosion, and visual clutter while keeping the river alignment realistic.",
+      ];
+    case "popular-place":
+      return [
+        "Upgrade the area into a clean, welcoming civic destination with strong pedestrian priority.",
+        "Add coordinated paving, seating, signage, lighting, shaded waiting space, and orderly frontage edges.",
+        "Reduce clutter and make the public realm feel premium, legible, and safe.",
+      ];
+    case "transit":
+      return [
+        "Add an accessible transit edge with proper shelter, boarding zone, seating, signage, and lighting.",
+        "Improve pedestrian approach paths, curb alignment, crossings, and waiting comfort.",
+        "Keep bus and vehicle movement realistic while making the stop feel organized and safe.",
+      ];
+    case "waste":
+      return [
+        "Replace informal dumping with a clean, organized waste-management zone using screened bins and paved service areas.",
+        "Add drainage, wash-down surfaces, planting buffers, and pedestrian-safe edges.",
+        "Make the space feel sanitary, orderly, and permanently maintainable.",
+      ];
+    case "drainage":
+      return [
+        "Build a complete drainage upgrade with covered channels, grated inlets, clean curb lines, and corrected surface slope.",
+        "Integrate the drainage into a high-quality pedestrian environment with continuous paving and safer crossings.",
+        "Eliminate waterlogging risk, exposed channels, and broken edge conditions.",
+      ];
+    default:
+      return [
+        "Create a coherent, high-quality civic upgrade with safe walking space, drainage, greenery, and clean public edges.",
+      ];
+  }
+}
+
 function buildPrompt(args: {
   locationName: string;
   issueType: string;
   planningGoal: string;
   notes: string;
 }) {
+  const issueDirectives = buildIssueDesignDirectives(args.issueType);
+
   return [
-    "Generate an edited, photorealistic civic planning image from the provided source photo.",
-    `Location context: ${args.locationName}.`,
-    `Issue type: ${args.issueType}.`,
-    `Transformation goal: ${args.planningGoal}.`,
-    args.notes ? `Additional citizen notes: ${args.notes}.` : "",
-    "Keep the same camera perspective and recognizable site geometry where possible.",
-    "Show practical interventions: safe walking space, drainage, shade, clean edges, accessible crossings, organized utilities, and maintainable public realm.",
-    "Return the transformed result as an image output, not a text-only explanation.",
-    "If you include any text, keep it brief and still provide the edited image in the images field.",
-    "Do not add fantasy architecture, monuments, political branding, luxury towers, fake text, or unreadable signage.",
+    "TASK: Generate an edited, photorealistic civic transformation image from the provided source photo.",
+    "DESIGN INTENT: Make the street feel like a best-in-class complete-street upgrade inspired by the clarity, cleanliness, safety, and coherence of top-quality urban streets in leading European and East Asian cities, but adapted to Indian climate, density, street width, local trees, materials, and neighborhood character.",
+    `LOCATION: ${args.locationName}.`,
+    `ISSUE TYPE: ${args.issueType}.`,
+    `PRIMARY GOAL: ${args.planningGoal}.`,
+    args.notes ? `OBSERVED PROBLEMS: ${args.notes}.` : "",
+    "PRESERVE:",
+    "- Keep the same camera position, perspective, sunlight direction, road alignment, building massing, and recognizable site geometry.",
+    "- Keep the transformation believable as a completed municipal or urban-design project, not fantasy concept art.",
+    "- Retain the local character of the neighborhood while dramatically improving the public realm.",
+    "UPGRADE WITH:",
+    ...issueDirectives.map((directive) => `- ${directive}`),
+    "- Use high-quality but believable civic materials such as concrete or stone pavers, proper curbs, cast drain covers, tactile paving where appropriate, tree pits with grates, subtle bollards, painted crossings, and coherent street furniture.",
+    "- Make the result feel intentional, orderly, premium, shaded, walkable, and easy to maintain.",
+    "QUALITY BAR:",
+    "- The after image should look like a bold, world-class public-realm upgrade, not just a basic cleanup or resurfacing.",
+    "- Walking space should be continuous, obstruction-free, and clearly safer than the original scene.",
+    "- Drainage, parking, utilities, planting, and pedestrian movement should all look designed as one system.",
+    "AVOID:",
+    "- No fantasy architecture, skyline changes, luxury towers, oversized boulevards, tram systems, or major rebuilding of private buildings.",
+    "- Do not westernize the scene unrealistically or erase Indian context.",
+    "- Do not remove mature trees unless safety requires it; integrate them with proper pits, grates, or landscape treatment.",
+    "- Do not add fake text, political branding, unreadable signage, or decorative gimmicks.",
+    "OUTPUT:",
+    "- Return the transformed result as an image output, not a text-only explanation.",
+    "- If you include any text, keep it brief and still provide the edited image in the images field.",
     "CRITICAL: Avoid using any emojis in your response.",
   ]
     .filter(Boolean)
-    .join(" ");
+    .join("\n");
 }
 
 function extensionForContentType(contentType: string) {
@@ -288,7 +353,7 @@ async function runImageTransform(sourceDataUrl: string, prompt: string) {
         ],
         modalities: ["image", "text"],
         image_config: {
-          image_size: "1K",
+          image_size: "2K",
         },
       }),
     },
