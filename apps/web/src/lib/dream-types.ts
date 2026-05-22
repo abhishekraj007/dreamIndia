@@ -13,6 +13,8 @@ export type ReportStatus = "submitted" | "ai-ready" | "planning" | "shared";
 export type DreamReport = {
   _id?: string;
   id?: string;
+  creatorName?: string;
+  creatorUsername?: string;
   title: string;
   issueType: IssueType;
   severity: Severity;

@@ -5,6 +5,7 @@ export default defineSchema({
   profile: defineTable({
     email: v.string(),
     name: v.optional(v.string()),
+    username: v.optional(v.string()),
     authUserId: v.string(),
     credits: v.optional(v.number()),
     // Admin status - can only be set manually in database
@@ -27,7 +28,8 @@ export default defineSchema({
     uploadCount: v.optional(v.number()),
   })
     .index("by_auth_user_id", ["authUserId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_username", ["username"]),
 
   // Unified subscriptions table for both Polar (web) and RevenueCat (native)
   // Single source of truth for all subscription and premium status data
@@ -109,6 +111,7 @@ export default defineSchema({
   transformationReports: defineTable({
     creatorId: v.string(),
     creatorName: v.optional(v.string()),
+    creatorUsername: v.optional(v.string()),
     title: v.string(),
     issueType: v.union(
       v.literal("roads"),

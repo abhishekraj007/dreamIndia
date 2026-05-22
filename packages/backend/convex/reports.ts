@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { authComponent } from "./lib/betterAuth";
+import { ensureProfileForAuthUser } from "./model/username";
 import { r2 } from "./uploads";
 
 const issueType = v.union(
@@ -34,6 +35,7 @@ const reportWithUrls = v.object({
   _creationTime: v.number(),
   creatorId: v.string(),
   creatorName: v.optional(v.string()),
+  creatorUsername: v.optional(v.string()),
   title: v.string(),
   issueType,
   severity,
@@ -62,6 +64,7 @@ const publicReportWithUrls = v.object({
   _id: v.id("transformationReports"),
   _creationTime: v.number(),
   creatorName: v.optional(v.string()),
+  creatorUsername: v.optional(v.string()),
   title: v.string(),
   issueType,
   severity,
@@ -94,28 +97,40 @@ const mapReport = v.object({
   severity,
   title: v.string(),
   locationName: v.string(),
+  creatorUsername: v.optional(v.string()),
   votes: v.number(),
   beforeImageUrl: nullableString,
   afterImageUrl: nullableString,
 });
 
 async function withImageUrls(ctx: QueryCtx, row: Doc<"transformationReports">) {
-  const beforeImageUrl = await resolveImageUrl(
-    ctx,
-    row.beforeStorageId,
-    row.beforeR2Key,
-  );
-  const afterImageUrl = await resolveImageUrl(
-    ctx,
-    row.afterStorageId,
-    row.afterR2Key,
-  );
+  const [beforeImageUrl, afterImageUrl, creatorUsername] = await Promise.all([
+    resolveImageUrl(ctx, row.beforeStorageId, row.beforeR2Key),
+    resolveImageUrl(ctx, row.afterStorageId, row.afterR2Key),
+    resolveCreatorUsername(ctx, row),
+  ]);
 
   return {
     ...row,
+    creatorUsername,
     beforeImageUrl,
     afterImageUrl,
   };
+}
+
+async function resolveCreatorUsername(
+  ctx: QueryCtx,
+  row: Doc<"transformationReports">,
+) {
+  if (row.creatorUsername) {
+    return row.creatorUsername;
+  }
+
+  const profile = await ctx.db
+    .query("profile")
+    .withIndex("by_auth_user_id", (q) => q.eq("authUserId", row.creatorId))
+    .unique();
+  return profile?.username;
 }
 
 async function resolveImageUrl(
@@ -179,6 +194,7 @@ export const createReport = mutation({
       throw new ConvexError("Sign in before saving the report to Convex.");
     }
 
+    const { username } = await ensureProfileForAuthUser(ctx, user);
     const now = Date.now();
     const googleMapsUrl =
       args.lat !== undefined && args.lng !== undefined
@@ -189,6 +205,7 @@ export const createReport = mutation({
       ...args,
       creatorId: user._id,
       creatorName: user.name,
+      creatorUsername: username,
       status: args.afterStorageId || args.afterR2Key ? "ai-ready" : "submitted",
       googleMapsUrl,
       votes: 1,
@@ -247,26 +264,28 @@ export const listReportsForMap = query({
     );
 
     return await Promise.all(
-      geocodedRows.map(async (row) => ({
-        _id: row._id,
-        lat: row.lat as number,
-        lng: row.lng as number,
-        issueType: row.issueType,
-        severity: row.severity,
-        title: row.title,
-        locationName: row.locationName,
-        votes: row.votes,
-        beforeImageUrl: await resolveImageUrl(
-          ctx,
-          row.beforeStorageId,
-          row.beforeR2Key,
-        ),
-        afterImageUrl: await resolveImageUrl(
-          ctx,
-          row.afterStorageId,
-          row.afterR2Key,
-        ),
-      })),
+      geocodedRows.map(async (row) => {
+        const [beforeImageUrl, afterImageUrl, creatorUsername] =
+          await Promise.all([
+            resolveImageUrl(ctx, row.beforeStorageId, row.beforeR2Key),
+            resolveImageUrl(ctx, row.afterStorageId, row.afterR2Key),
+            resolveCreatorUsername(ctx, row),
+          ]);
+
+        return {
+          _id: row._id,
+          lat: row.lat as number,
+          lng: row.lng as number,
+          issueType: row.issueType,
+          severity: row.severity,
+          title: row.title,
+          locationName: row.locationName,
+          creatorUsername,
+          votes: row.votes,
+          beforeImageUrl,
+          afterImageUrl,
+        };
+      }),
     );
   },
 });

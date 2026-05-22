@@ -110,6 +110,20 @@ function shouldReplaceLocation(value: string, defaultValue: string) {
   return !trimmed || trimmed === defaultValue;
 }
 
+function creatorHandle(report: DreamReport) {
+  if (report.creatorUsername) {
+    return `@${report.creatorUsername}`;
+  }
+  return report.creatorName || "community";
+}
+
+function creatorLine(report: DreamReport) {
+  const handle = creatorHandle(report);
+  return handle === "community"
+    ? "Community suggestion"
+    : `Suggested by ${handle}`;
+}
+
 async function uploadToConvex(url: string, blob: Blob) {
   const response = await fetch(url, {
     method: "POST",
@@ -164,6 +178,10 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   const { isAuthenticated } = useConvexAuth();
   const { data: session } = authClient.useSession();
+  const userData = useQuery(
+    api.user.fetchUserAndProfile,
+    isAuthenticated ? {} : "skip",
+  );
   const liveReports = useQuery(
     api.reports.listReports,
     selectedIssue === "all"
@@ -201,6 +219,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   const afterImage = generatedImage ?? selectedReport.afterImageUrl;
   const hasLatLng = Boolean(draft.lat && draft.lng);
   const canUseStreetView = hasLatLng && !file && !isTransforming;
+  const signedInHandle = userData?.profile?.username
+    ? `@${userData.profile.username}`
+    : session?.user?.email;
 
   function updateDraft<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -313,6 +334,12 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   }
 
   async function onFileChange(nextFile: File | null) {
+    if (nextFile && !isAuthenticated) {
+      setLoginModalOpen(true);
+      setMessage("Sign in to create a public report under your username.");
+      return;
+    }
+
     setFile(nextFile);
     setGeneratedImage(null);
     setAfterStorageId(null);
@@ -404,6 +431,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   async function handleUseStreetView() {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
+      setMessage("Sign in to create a public improvement from Street View.");
       return;
     }
     if (!draft.lat || !draft.lng) {
@@ -439,6 +467,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   async function transformImage() {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
+      setMessage("Sign in to create a public improvement under your username.");
       return;
     }
 
@@ -472,7 +501,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   async function saveReport() {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
-      setMessage("Sign in to save reports to the shared Convex atlas.");
+      setMessage("Sign in to post a public civic report under your username.");
       return;
     }
     setIsSaving(true);
@@ -510,7 +539,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           .map((tag) => tag.trim())
           .filter(Boolean),
       });
-      setMessage("Saved to the live Convex atlas.");
+      setMessage("Posted to the Dream India public forum.");
     } catch (error) {
       openLoginForAuthError(error);
       setMessage(error instanceof Error ? error.message : "Save failed.");
@@ -669,11 +698,11 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                 </p>
                 <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 sm:block" />
                 <p className="hidden text-xs text-muted-foreground sm:block">
-                  Evidence to exact-location transformation briefs
+                  Public reports, exact locations, and community-backed fixes
                 </p>
               </div>
               <h1 className="mt-1 text-balance text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">
-                Show the bad condition, then show the Dream India version.
+                Explore every bad condition. Sign in only when you want to report one.
               </h1>
             </div>
             <div className="grid shrink-0 grid-cols-4 gap-2 lg:w-[430px]">
@@ -693,7 +722,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   Exact evidence
                 </p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight">
-                  Create a transformation
+                  Create a public report
                 </h2>
               </div>
               <div className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
@@ -867,7 +896,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                 ) : (
                   <WandSparkles className="size-4" />
                 )}
-                {isTransforming ? "Transforming" : "Transform"}
+                {isTransforming ? "Creating" : "Create vision"}
               </Button>
               <Button
                 type="button"
@@ -880,7 +909,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                 ) : (
                   <Send className="size-4" />
                 )}
-                {isSaving ? "Saving" : "Save"}
+                {isSaving ? "Posting" : "Post"}
               </Button>
             </div>
             {message && (
@@ -889,9 +918,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               </p>
             )}
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-              {session?.user
-                ? `Signed in as ${session.user.email}.`
-                : "Sign in to generate, save, vote, and share reports."}
+              {signedInHandle
+                ? `Posting as ${signedInHandle}.`
+                : "Everyone can explore. Sign in to create reports, generate visions, and vote."}
             </p>
           </aside>
 
@@ -940,6 +969,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   <h2 className="text-xl font-semibold">
                     {selectedReport.title}
                   </h2>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
+                    {creatorLine(selectedReport)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1014,7 +1046,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-xs font-medium text-muted-foreground">
                   {selectedReport._id
-                    ? "Live community report"
+                    ? creatorLine(selectedReport)
                     : "Interactive demo report"}
                 </span>
                 <Button
@@ -1084,6 +1116,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                         {report.locationName}
+                      </p>
+                      <p className="mt-2 truncate text-[11px] font-medium text-muted-foreground">
+                        {creatorLine(report)}
                       </p>
                       <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                         <span className="rounded-full border border-border bg-card px-2 py-0.5 capitalize">

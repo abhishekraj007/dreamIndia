@@ -40,7 +40,7 @@ importers:
         version: 0.3.0(@ai-sdk/provider-utils@3.0.17(zod@4.1.12))(ai@5.0.101(zod@4.1.12))(convex-helpers@0.1.117(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@5.9.3)(zod@4.1.12))(convex@1.38.0(react@19.2.3))(react@19.2.3)
       '@convex-dev/better-auth':
         specifier: 'catalog:'
-        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       '@convex-dev/polar':
         specifier: ^0.6.4
         version: 0.6.4(@polar-sh/checkout@0.2.1(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(react@19.2.3))(@polar-sh/sdk@0.40.3)(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(zod@4.1.12)
@@ -58,10 +58,10 @@ importers:
         version: 1.1.6(react@19.2.3)
       '@polar-sh/better-auth':
         specifier: ^1.2.1
-        version: 1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)
+        version: 1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)
       '@polar-sh/nextjs':
         specifier: ^0.7.0
-        version: 0.7.0(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
+        version: 0.7.0(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
       '@polar-sh/sdk':
         specifier: ^0.40.3
         version: 0.40.3
@@ -103,7 +103,7 @@ importers:
         version: 1.0.0
       better-auth:
         specifier: 'catalog:'
-        version: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+        version: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -245,7 +245,7 @@ importers:
         version: 56.0.8(@babel/core@7.29.0)(@babel/runtime@7.29.2)(expo@56.0.0-preview.11)(react-refresh@0.14.2)
       better-auth:
         specifier: 1.3.27
-        version: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+        version: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       convex:
         specifier: ^1.35.1
         version: 1.38.0(react@19.2.3)
@@ -426,7 +426,7 @@ importers:
         version: 0.3.0(@ai-sdk/provider-utils@3.0.17(zod@4.1.12))(ai@5.0.101(zod@4.1.12))(convex-helpers@0.1.117(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@5.9.3)(zod@4.1.12))(convex@1.38.0(react@19.2.3))(react@19.2.3)
       '@convex-dev/better-auth':
         specifier: 'catalog:'
-        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       '@convex-dev/polar':
         specifier: ^0.6.4
         version: 0.6.4(@polar-sh/checkout@0.2.1(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(react@19.2.3))(@polar-sh/sdk@0.40.3)(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(zod@4.1.12)
@@ -447,13 +447,13 @@ importers:
         version: 3.0.0-beta.2(tailwindcss@4.1.16)
       '@polar-sh/better-auth':
         specifier: ^1.2.1
-        version: 1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)
+        version: 1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)
       '@polar-sh/checkout':
         specifier: ^0.2.0
         version: 0.2.1(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(react@19.2.3)
       '@polar-sh/nextjs':
         specifier: ^0.7.0
-        version: 0.7.0(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
+        version: 0.7.0(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
       '@polar-sh/sdk':
         specifier: ^0.40.3
         version: 0.40.3
@@ -501,7 +501,7 @@ importers:
         version: 1.0.0
       better-auth:
         specifier: 'catalog:'
-        version: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+        version: 1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -528,10 +528,10 @@ importers:
         version: 12.23.24(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next:
         specifier: 16.0.10
-        version: 16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next-intl:
         specifier: ^4.8.2
-        version: 4.8.2(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 4.8.2(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -554,8 +554,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       shadcn:
-        specifier: ^4.3.1
-        version: 4.7.0(@types/node@20.19.23)(typescript@5.9.3)
+        specifier: ^4.8.0
+        version: 4.8.0(@types/node@20.19.23)(typescript@5.9.3)
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -563,7 +563,7 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       tailwind-merge:
-        specifier: ^3.5.0
+        specifier: ^3.6.0
         version: 3.6.0
       tw-animate-css:
         specifier: ^1.4.0
@@ -610,7 +610,7 @@ importers:
         version: 0.3.0(@ai-sdk/provider-utils@3.0.17(zod@4.1.12))(ai@5.0.101(zod@4.1.12))(convex-helpers@0.1.117(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@5.9.3)(zod@4.1.12))(convex@1.38.0(react@19.2.3))(react@19.2.3)
       '@convex-dev/better-auth':
         specifier: 'catalog:'
-        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       '@convex-dev/expo-push-notifications':
         specifier: ^0.3.0
         version: 0.3.0(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@5.9.3)(zod@4.1.12)
@@ -634,7 +634,7 @@ importers:
         version: 5.0.101(zod@4.1.12)
       better-auth:
         specifier: 'catalog:'
-        version: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+        version: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       convex:
         specifier: 'catalog:'
         version: 1.38.0(react@19.2.3)
@@ -7315,10 +7315,6 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@4.1.0:
-    resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
-    hasBin: true
-
   js-yaml@4.1.1:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
@@ -9131,6 +9127,10 @@ packages:
 
   shadcn@4.7.0:
     resolution: {integrity: sha512-70fwnesNrY1GgeD7Kdzn+3SsYeyfibm8immsA5L68+OusoPTvYF01oWExl8/latKpMpvVXcbgdbbE6VFBJQ38w==}
+    hasBin: true
+
+  shadcn@4.8.0:
+    resolution: {integrity: sha512-LAm3I/1FdoU/zu5GVG8Hbna4X9zlzEG5TeeCPXqsopkjvGk8QUF9OFhqeRN8oM6Oh/ynUI/yQHZxQAO3Ymcqsg==}
     hasBin: true
 
   shallowequal@1.1.0:
@@ -11289,7 +11289,7 @@ snapshots:
   '@better-auth/expo@1.3.27(better-auth@1.3.27(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(expo-constants@56.0.10)(expo-crypto@56.0.3(expo@56.0.0-preview.11))(expo-linking@56.0.7)(expo-secure-store@56.0.3(expo@56.0.0-preview.11))(expo-web-browser@56.0.4(expo@56.0.0-preview.11)(react-native@0.85.3(@babel/core@7.29.0)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.3)))':
     dependencies:
       '@better-fetch/fetch': 1.1.18
-      better-auth: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+      better-auth: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       expo-constants: 56.0.10(expo@56.0.0-preview.11)(react-native@0.85.3(@babel/core@7.29.0)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.3))
       expo-crypto: 56.0.3(expo@56.0.0-preview.11)
       expo-linking: 56.0.7(expo@56.0.0-preview.11)(react-native@0.85.3(@babel/core@7.29.0)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
@@ -11344,9 +11344,9 @@ snapshots:
       - hono
       - typescript
 
-  '@convex-dev/better-auth@0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
+  '@convex-dev/better-auth@0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
     dependencies:
-      better-auth: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+      better-auth: 1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       common-tags: 1.8.2
       convex: 1.38.0(react@19.2.3)
       convex-helpers: 0.1.117(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@5.9.3)(zod@3.25.76)
@@ -11363,7 +11363,7 @@ snapshots:
 
   '@convex-dev/better-auth@0.9.6(@standard-schema/spec@1.0.0)(better-auth@1.3.27(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@6.0.3)':
     dependencies:
-      better-auth: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+      better-auth: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       common-tags: 1.8.2
       convex: 1.38.0(react@19.2.3)
       convex-helpers: 0.1.117(@standard-schema/spec@1.0.0)(convex@1.38.0(react@19.2.3))(hono@4.12.18)(react@19.2.3)(typescript@6.0.3)(zod@3.25.76)
@@ -12934,11 +12934,11 @@ snapshots:
       - react-is
       - redux
 
-  '@polar-sh/better-auth@1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)':
+  '@polar-sh/better-auth@1.2.1(@polar-sh/sdk@0.40.3)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(better-auth@1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)(zod@4.1.12)':
     dependencies:
       '@polar-sh/checkout': 0.1.14(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.1.11(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)
       '@polar-sh/sdk': 0.40.3
-      better-auth: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+      better-auth: 1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       zod: 4.1.12
     transitivePeerDependencies:
       - '@stripe/react-stripe-js'
@@ -12954,7 +12954,7 @@ snapshots:
     dependencies:
       '@polar-sh/checkout': 0.1.14(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)
       '@polar-sh/sdk': 0.40.3
-      better-auth: 1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
+      better-auth: 1.3.27(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14)
       zod: 4.1.12
     transitivePeerDependencies:
       - '@stripe/react-stripe-js'
@@ -13009,11 +13009,17 @@ snapshots:
       date-fns: 4.1.0
       react: 19.2.3
 
-  '@polar-sh/nextjs@0.7.0(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
+  '@polar-sh/nextjs@0.7.0(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
     dependencies:
       '@polar-sh/adapter-utils': 0.3.0
       '@polar-sh/sdk': 0.40.3
       next: 16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+
+  '@polar-sh/nextjs@0.7.0(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
+    dependencies:
+      '@polar-sh/adapter-utils': 0.3.0
+      '@polar-sh/sdk': 0.40.3
+      next: 16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
 
   '@polar-sh/sdk@0.39.1':
     dependencies:
@@ -16970,7 +16976,7 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       svelte: 5.43.14
 
-  better-auth@1.3.27(next@16.0.10(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14):
+  better-auth@1.3.27(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.43.14):
     dependencies:
       '@better-auth/core': 1.3.27
       '@better-auth/utils': 0.3.0
@@ -16986,7 +16992,7 @@ snapshots:
       nanostores: 1.0.1
       zod: 4.1.12
     optionalDependencies:
-      next: 16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      next: 16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       svelte: 5.43.14
@@ -17016,7 +17022,7 @@ snapshots:
       bytes: 3.1.2
       content-type: 1.0.5
       debug: 4.4.3
-      http-errors: 2.0.0
+      http-errors: 2.0.1
       iconv-lite: 0.7.2
       on-finished: 2.4.1
       qs: 6.15.1
@@ -17385,7 +17391,7 @@ snapshots:
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
@@ -18537,7 +18543,7 @@ snapshots:
       etag: 1.8.1
       finalhandler: 2.1.1
       fresh: 2.0.0
-      http-errors: 2.0.0
+      http-errors: 2.0.1
       merge-descriptors: 2.0.0
       mime-types: 3.0.2
       on-finished: 2.4.1
@@ -18549,7 +18555,7 @@ snapshots:
       router: 2.2.0
       send: 1.2.1
       serve-static: 2.2.1
-      statuses: 2.0.1
+      statuses: 2.0.2
       type-is: 2.1.0
       vary: 1.1.2
     transitivePeerDependencies:
@@ -18680,7 +18686,7 @@ snapshots:
       escape-html: 1.0.3
       on-finished: 2.4.1
       parseurl: 1.3.3
-      statuses: 2.0.1
+      statuses: 2.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -19300,10 +19306,6 @@ snapshots:
   js-md5@0.8.3: {}
 
   js-tokens@4.0.0: {}
-
-  js-yaml@4.1.0:
-    dependencies:
-      argparse: 2.0.1
 
   js-yaml@4.1.1:
     dependencies:
@@ -20361,14 +20363,14 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.8.2: {}
 
-  next-intl@4.8.2(next@16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3):
+  next-intl@4.8.2(next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.10
       '@parcel/watcher': 2.5.6
       '@swc/core': 1.15.11
       icu-minify: 4.8.2
       negotiator: 1.0.0
-      next: 16.0.10(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      next: 16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       next-intl-swc-plugin-extractor: 4.8.2
       po-parser: 2.1.1
       react: 19.2.3
@@ -20392,6 +20394,31 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.3)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.0.10
+      '@next/swc-darwin-x64': 16.0.10
+      '@next/swc-linux-arm64-gnu': 16.0.10
+      '@next/swc-linux-arm64-musl': 16.0.10
+      '@next/swc-linux-x64-gnu': 16.0.10
+      '@next/swc-linux-x64-musl': 16.0.10
+      '@next/swc-win32-arm64-msvc': 16.0.10
+      '@next/swc-win32-x64-msvc': 16.0.10
+      '@opentelemetry/api': 1.9.0
+      babel-plugin-react-compiler: 1.0.0
+      sharp: 0.34.4
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+
+  next@16.0.10(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      '@next/env': 16.0.10
+      '@swc/helpers': 0.5.15
+      caniuse-lite: 1.0.30001751
+      postcss: 8.4.31
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      styled-jsx: 5.1.6(@babel/core@7.29.0)(react@19.2.3)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.0.10
       '@next/swc-darwin-x64': 16.0.10
@@ -21674,6 +21701,49 @@ snapshots:
       - supports-color
       - typescript
 
+  shadcn@4.8.0(@types/node@20.19.23)(typescript@5.9.3):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/parser': 7.29.3
+      '@babel/plugin-transform-typescript': 7.28.5(@babel/core@7.29.0)
+      '@babel/preset-typescript': 7.28.5(@babel/core@7.29.0)
+      '@dotenvx/dotenvx': 1.66.0
+      '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
+      '@types/validate-npm-package-name': 4.0.2
+      browserslist: 4.27.0
+      commander: 14.0.3
+      cosmiconfig: 9.0.1(typescript@5.9.3)
+      dedent: 1.7.2
+      deepmerge: 4.3.1
+      diff: 8.0.4
+      execa: 9.6.1
+      fast-glob: 3.3.3
+      fs-extra: 11.3.5
+      fuzzysort: 3.1.0
+      https-proxy-agent: 7.0.6
+      kleur: 4.1.5
+      msw: 2.14.6(@types/node@20.19.23)(typescript@5.9.3)
+      node-fetch: 3.3.2
+      open: 11.0.0
+      ora: 8.2.0
+      postcss: 8.5.14
+      postcss-selector-parser: 7.1.1
+      prompts: 2.4.2
+      recast: 0.23.11
+      stringify-object: 5.0.0
+      tailwind-merge: 3.6.0
+      ts-morph: 26.0.0
+      tsconfig-paths: 4.2.0
+      validate-npm-package-name: 7.0.2
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.2(zod@3.25.76)
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - '@types/node'
+      - babel-plugin-macros
+      - supports-color
+      - typescript
+
   shallowequal@1.1.0: {}
 
   sharp@0.34.4:
@@ -21970,6 +22040,13 @@ snapshots:
       react: 19.2.3
     optionalDependencies:
       '@babel/core': 7.28.5
+
+  styled-jsx@5.1.6(@babel/core@7.29.0)(react@19.2.3):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.2.3
+    optionalDependencies:
+      '@babel/core': 7.29.0
 
   styleq@0.1.3: {}
 

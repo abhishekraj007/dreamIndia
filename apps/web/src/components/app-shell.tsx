@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useEffect, useState } from "react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@convex-starter/backend/convex/_generated/api";
 import {
-  Coins,
   Home,
   LayoutDashboard,
   Map as MapIcon,
@@ -21,7 +20,6 @@ import { useLoginModal } from "@/hooks/use-login-modal";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { CreditsModal } from "@/components/credits-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -38,7 +36,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -52,7 +49,6 @@ type NavItem = {
 const primaryNav: NavItem[] = [
   { href: "/", label: "Dream", icon: Home, mobile: true },
   { href: "/atlas", label: "Map", icon: MapIcon, mobile: true },
-  { href: "/pricing", label: "Pricing", icon: Coins, mobile: true },
 ];
 
 const mobileNav = primaryNav.filter((item) => item.mobile);
@@ -66,26 +62,26 @@ function isActive(pathname: string | null, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [creditsOpen, setCreditsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const { data: session } = authClient.useSession();
   const { openLogin } = useLoginModal();
+  const ensureUsername = useMutation(api.user.ensureUsername);
 
   const userData = useQuery(
     api.user.fetchUserAndProfile,
     isAuthenticated ? {} : "skip",
   );
-  const userCredits = useQuery(
-    api.features.credits.queries.getUserCredits,
-    isAuthenticated ? {} : "skip",
-  );
-  const premiumStatus = useQuery(
-    api.features.premium.queries.isPremium,
-    isAuthenticated ? {} : "skip",
-  );
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void ensureUsername({}).catch((error) => {
+      console.error("Failed to ensure Dream India username", error);
+    });
+  }, [ensureUsername, isAuthenticated]);
 
   const userName =
+    (userData?.profile?.username && `@${userData.profile.username}`) ||
     userData?.profile?.name ||
     userData?.userMetadata?.name ||
     session?.user?.name ||
@@ -134,36 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <LocaleSwitcher />
             </div>
             <ModeToggle />
-            {isAuthenticated && (
-              <>
-                {!authLoading && userCredits !== undefined ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCreditsOpen(true)}
-                    className="hidden sm:inline-flex"
-                  >
-                    <Coins className="size-4" />
-                    {userCredits?.credits ?? 0}
-                  </Button>
-                ) : (
-                  <Skeleton className="hidden h-8 w-16 rounded-md sm:block" />
-                )}
-                {!premiumStatus?.isPremium && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => router.push("/pricing")}
-                    className="hidden sm:inline-flex"
-                  >
-                    Upgrade
-                  </Button>
-                )}
-              </>
-            )}
-
-            {isAuthenticated ? (
+            {!authLoading && isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -191,14 +158,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => setCreditsOpen(true)}>
-                    <Coins className="size-4" />
-                    Credits ({userCredits?.credits ?? 0})
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={"/dashboard" as "/"}>
                       <LayoutDashboard className="size-4" />
-                      Dashboard
+                      My reports
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -229,7 +192,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="bg-accent text-accent-foreground hover:bg-accent/90"
               >
                 <Sparkles className="size-4" />
-                Sign in
+                Join forum
               </Button>
             )}
 
@@ -317,8 +280,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </ul>
       </nav>
-
-      <CreditsModal open={creditsOpen} onOpenChange={setCreditsOpen} />
     </div>
   );
 }

@@ -170,7 +170,7 @@ export function AppSidebar() {
                       authClient.signOut({
                         fetchOptions: {
                           onSuccess: () => {
-                            router.push("/auth");
+                            router.push("/");
                           },
                         },
                       });

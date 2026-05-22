@@ -40,6 +40,7 @@ import type * as lib_revenuecatWebhooks from "../lib/revenuecatWebhooks.js";
 import type * as lib_uploadValidation from "../lib/uploadValidation.js";
 import type * as migrations_addCreditsToProfiles from "../migrations/addCreditsToProfiles.js";
 import type * as model_user from "../model/user.js";
+import type * as model_username from "../model/username.js";
 import type * as privateData from "../privateData.js";
 import type * as purchases from "../purchases.js";
 import type * as pushNotifications from "../pushNotifications.js";
@@ -90,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   "lib/uploadValidation": typeof lib_uploadValidation;
   "migrations/addCreditsToProfiles": typeof migrations_addCreditsToProfiles;
   "model/user": typeof model_user;
+  "model/username": typeof model_username;
   privateData: typeof privateData;
   purchases: typeof purchases;
   pushNotifications: typeof pushNotifications;

@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { isRTL } from "@convex-starter/i18n";
 import "../index.css";
 import Providers from "@/components/providers";
 import { LayoutContent } from "@/components/layout-content";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,7 +85,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={isRTL(locale) ? "rtl" : "ltr"}
-      suppressHydrationWarning
+      suppressHydrationWarning className={cn("font-sans", inter.variable)}
     >
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}

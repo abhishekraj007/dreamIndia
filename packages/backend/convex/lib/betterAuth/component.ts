@@ -2,6 +2,7 @@ import { type AuthFunctions, createClient } from "@convex-dev/better-auth";
 import { components, internal } from "../../_generated/api";
 import type { DataModel, Id } from "../../_generated/dataModel";
 import { isDevelopment } from "../../util";
+import { ensureProfileForAuthUser } from "../../model/username";
 
 /**
  * NOTE:
@@ -24,13 +25,7 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
          * instead of using the deprecated setUserId method
          */
         console.log("onCreate -> authUser", JSON.stringify(authUser, null, 2));
-        await ctx.db.insert("profile", {
-          name: authUser.name,
-          authUserId: authUser._id,
-          credits: 0,
-          isPremium: false,
-          email: authUser.email,
-        });
+        await ensureProfileForAuthUser(ctx, authUser);
       },
       onUpdate: async () =>
       // ctx,
