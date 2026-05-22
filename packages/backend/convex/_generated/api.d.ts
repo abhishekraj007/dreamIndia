@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as analysis from "../analysis.js";
 import type * as auth from "../auth.js";
+import type * as civicConsultant from "../civicConsultant.js";
 import type * as englishTutor from "../englishTutor.js";
 import type * as features_appConfig_guards from "../features/appConfig/guards.js";
 import type * as features_appConfig_index from "../features/appConfig/index.js";
@@ -53,7 +55,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analysis: typeof analysis;
   auth: typeof auth;
+  civicConsultant: typeof civicConsultant;
   englishTutor: typeof englishTutor;
   "features/appConfig/guards": typeof features_appConfig_guards;
   "features/appConfig/index": typeof features_appConfig_index;

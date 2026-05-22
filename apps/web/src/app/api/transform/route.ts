@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import OpenAI, { toFile } from "openai";
 import sharp from "sharp";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const openrouterKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+    if (!openrouterKey) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY is not configured." },
+        { error: "Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is configured." },
         { status: 503 },
       );
     }
@@ -34,58 +34,99 @@ export async function POST(request: Request) {
       "Keep the same camera perspective and recognizable site geometry where possible.",
       "Show practical interventions: safe walking space, drainage, shade, clean edges, accessible crossings, organized utilities, and maintainable public realm.",
       "Do not add fantasy architecture, monuments, political branding, luxury towers, fake text, or unreadable signage.",
+      "CRITICAL: Avoid using any emojis in your response.",
     ]
       .filter(Boolean)
       .join(" ");
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const models = ["gpt-image-2", "gpt-image-1.5"];
-    let lastError: unknown;
-
-    for (const model of models) {
-      try {
-        const params = {
-          model: model as never,
-          prompt,
-          size: "1536x1024" as const,
-        };
-        const isFile = photo instanceof File && photo.size > 0;
-        const result = isFile
-          ? await client.images.edit({
-              ...params,
-              image: await toFile(
-                await sharp(Buffer.from(await photo.arrayBuffer()))
-                  .rotate()
-                  .resize(1536, 1024, {
-                    fit: "inside",
-                    withoutEnlargement: true,
-                  })
-                  .png()
-                  .toBuffer(),
-                "citizen-photo.png",
-                { type: "image/png" },
-              ),
-            })
-          : await client.images.generate(params);
-
-        const image = result.data?.[0];
-        if (image?.b64_json) {
-          return NextResponse.json({
-            imageUrl: `data:image/png;base64,${image.b64_json}`,
-            model,
-            prompt,
-          });
-        }
-        if (image?.url) {
-          return NextResponse.json({ imageUrl: image.url, model, prompt });
-        }
-        throw new Error("Image model returned no image payload.");
-      } catch (error) {
-        lastError = error;
-      }
+    const isFile = photo instanceof File && photo.size > 0;
+    if (!isFile) {
+      return NextResponse.json(
+        { error: "A valid photo must be uploaded for the transformation." },
+        { status: 400 },
+      );
     }
 
-    throw lastError;
+    // Process image buffer using sharp to output standard PNG
+    const imageBuffer = Buffer.from(await photo.arrayBuffer());
+    const processedPngBuffer = await sharp(imageBuffer)
+      .rotate()
+      .resize(1024, 768, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .png()
+      .toBuffer();
+
+    const base64Image = processedPngBuffer.toString("base64");
+    const imageUrlData = `data:image/png;base64,${base64Image}`;
+
+    // Request OpenRouter Chat Completions with modalities to generate the image
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openrouterKey}`,
+        "HTTP-Referer": "https://cockroachdreamindia.com",
+        "X-Title": "CockroachDreamIndia",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: prompt,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageUrlData,
+                },
+              },
+            ],
+          },
+        ],
+        modalities: ["image", "text"],
+        image_config: {
+          image_size: "1K",
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenRouter image transformation failed: ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    const message = result.choices?.[0]?.message;
+    
+    // Look for image URL in various possible locations in the OpenRouter response
+    let generatedImageUrl: string | null = null;
+    
+    if (message?.images?.[0]?.image_url?.url) {
+      generatedImageUrl = message.images[0].image_url.url;
+    } else if (message?.image_url?.url) {
+      generatedImageUrl = message.image_url.url;
+    } else if (typeof message?.content === "string" && message.content.startsWith("http")) {
+      generatedImageUrl = message.content.trim();
+    } else if (result.choices?.[0]?.image_url?.url) {
+      generatedImageUrl = result.choices[0].image_url.url;
+    }
+
+    if (!generatedImageUrl) {
+      console.error("OpenRouter full response payload:", JSON.stringify(result));
+      throw new Error("No transformed image URL returned from the OpenRouter model.");
+    }
+
+    return NextResponse.json({
+      imageUrl: generatedImageUrl,
+      model: "google/gemini-3.1-flash-image-preview",
+      prompt,
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to transform image.";

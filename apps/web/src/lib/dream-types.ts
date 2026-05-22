@@ -28,6 +28,7 @@ export type DreamReport = {
   googleMapsUrl?: string;
   tags: string[];
   votes: number;
+  aiProposal?: string;
   createdAt: number;
 };
 

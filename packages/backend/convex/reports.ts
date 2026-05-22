@@ -134,3 +134,75 @@ export const vote = mutation({
     });
   },
 });
+
+export const listUserReports = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return [];
+    }
+    const rows = await ctx.db
+      .query("transformationReports")
+      .withIndex("by_creator", (q) => q.eq("creatorId", user._id))
+      .order("desc")
+      .collect();
+
+    return await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        beforeImageUrl: row.beforeStorageId
+          ? await ctx.storage.getUrl(row.beforeStorageId)
+          : null,
+        afterImageUrl: row.afterStorageId
+          ? await ctx.storage.getUrl(row.afterStorageId)
+          : null,
+      })),
+    );
+  },
+});
+
+export const getReport = query({
+  args: { id: v.id("transformationReports") },
+  handler: async (ctx, args) => {
+    const report = await ctx.db.get(args.id);
+    if (!report) {
+      return null;
+    }
+    return {
+      ...report,
+      beforeImageUrl: report.beforeStorageId
+        ? await ctx.storage.getUrl(report.beforeStorageId)
+        : null,
+      afterImageUrl: report.afterStorageId
+        ? await ctx.storage.getUrl(report.afterStorageId)
+        : null,
+    };
+  },
+});
+
+export const saveAiProposal = mutation({
+  args: {
+    id: v.id("transformationReports"),
+    proposal: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new ConvexError("Sign in before saving the proposal.");
+    }
+    const report = await ctx.db.get(args.id);
+    if (!report) {
+      throw new ConvexError("Report not found.");
+    }
+    if (report.creatorId !== user._id) {
+      throw new ConvexError("You do not have permission to modify this report.");
+    }
+    await ctx.db.patch(args.id, {
+      aiProposal: args.proposal,
+      status: "planning",
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});

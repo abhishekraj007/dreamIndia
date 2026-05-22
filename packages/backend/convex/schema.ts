@@ -141,6 +141,7 @@ export default defineSchema({
     googleMapsUrl: v.optional(v.string()),
     tags: v.array(v.string()),
     votes: v.number(),
+    aiProposal: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
