@@ -10,9 +10,11 @@ type GoogleAddressComponent = {
 };
 
 type GoogleGeocodeResult = {
+  place_id?: string;
   formatted_address?: string;
   types?: Array<string>;
   address_components?: Array<GoogleAddressComponent>;
+  geometry?: { location?: { lat: number; lng: number } };
 };
 
 function componentValue(
@@ -188,5 +190,68 @@ export const forwardGeocode = action({
       formattedAddress: result?.formatted_address ?? null,
       locationName: chooseLocationName(json.results ?? []),
     };
+  },
+});
+
+export const searchLocations = action({
+  args: {
+    query: v.string(),
+  },
+  returns: v.array(
+    v.object({
+      placeId: nullableString,
+      lat: v.number(),
+      lng: v.number(),
+      formattedAddress: nullableString,
+      locationName: nullableString,
+    }),
+  ),
+  handler: async (_ctx, args) => {
+    const googleMapsKey = process.env.GOOGLE_MAPS_KEY;
+    if (!googleMapsKey) {
+      throw new ConvexError(
+        "GOOGLE_MAPS_KEY is not configured in Convex environment variables.",
+      );
+    }
+    const trimmed = args.query.trim();
+    if (!trimmed) return [];
+
+    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    url.searchParams.set("address", trimmed);
+    url.searchParams.set("region", "in");
+    url.searchParams.set("key", googleMapsKey);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      const body = await response.text();
+      throw new ConvexError(
+        `Location search failed: ${response.status} ${body}`,
+      );
+    }
+    const json = (await response.json()) as {
+      status?: string;
+      error_message?: string;
+      results?: Array<GoogleGeocodeResult>;
+    };
+    if (json.status === "ZERO_RESULTS") return [];
+    if (json.status && json.status !== "OK") {
+      throw new ConvexError(
+        `Location search failed: ${json.status}${json.error_message ? ` - ${json.error_message}` : ""}`,
+      );
+    }
+
+    return (json.results ?? []).slice(0, 5).flatMap((result) => {
+      const loc = result.geometry?.location;
+      if (!loc) return [];
+      return [
+        {
+          placeId: result.place_id ?? null,
+          lat: loc.lat,
+          lng: loc.lng,
+          formattedAddress: result.formatted_address ?? null,
+          locationName: chooseLocationName([result]),
+        },
+      ];
+    });
   },
 });

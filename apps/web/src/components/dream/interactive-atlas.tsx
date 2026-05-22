@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { Id } from "@convex-starter/backend/convex/_generated/dataModel";
 import { api } from "@convex-starter/backend/convex/_generated/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { authClient } from "@/lib/auth-client";
-import { issueTypeBadge } from "@/lib/badge-styles";
 import { demoReports, demoStats, issueOptions } from "@/lib/dream-data";
 import type {
   DreamReport,
@@ -17,13 +16,16 @@ import type {
 } from "@/lib/dream-types";
 import { readGpsFromImage } from "@/lib/exif";
 import { LoginModal } from "@/components/login-modal";
+import {
+  ImageLightbox,
+  type LightboxImage,
+} from "@/components/dream/image-lightbox";
 import { SourcePreview } from "@/components/dream/source-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   BookOpen,
   Camera,
-  CheckCircle2,
   Copy,
   FileImage,
   FileText,
@@ -31,7 +33,7 @@ import {
   Loader2,
   LocateFixed,
   MapPin,
-  Navigation,
+  Maximize2,
   Route,
   Send,
   Sparkles,
@@ -150,10 +152,15 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   const [proposal, setProposal] = useState<string | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(
+    null,
+  );
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [optimisticVotes, setOptimisticVotes] = useState<
     Record<string, { voted: boolean; votes: number }>
   >({});
+  const dragStartXRef = useRef(0);
+  const dragMovedRef = useRef(false);
 
   const { isAuthenticated } = useConvexAuth();
   const { data: session } = authClient.useSession();
@@ -194,17 +201,6 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
   const afterImage = generatedImage ?? selectedReport.afterImageUrl;
   const hasLatLng = Boolean(draft.lat && draft.lng);
   const canUseStreetView = hasLatLng && !file && !isTransforming;
-
-  const planningChecklist = useMemo(
-    () => [
-      "Capture exact location and visual proof",
-      "Classify issue, severity, and public risk",
-      "Generate realistic after-view with planning constraints",
-      "Save the before/after report to Convex",
-      "Share a map-linked civic brief with stakeholders",
-    ],
-    [],
-  );
 
   function updateDraft<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -616,6 +612,8 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(true);
+    dragStartXRef.current = event.clientX;
+    dragMovedRef.current = false;
     const rect = event.currentTarget.getBoundingClientRect();
     handleSliderMove(event.clientX, rect);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -623,6 +621,9 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
+    if (Math.abs(event.clientX - dragStartXRef.current) > 6) {
+      dragMovedRef.current = true;
+    }
     const rect = event.currentTarget.getBoundingClientRect();
     handleSliderMove(event.clientX, rect);
   };
@@ -632,18 +633,68 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
+  function openImage(src: string | null | undefined, title: string) {
+    if (!src) return;
+    setLightboxImage({
+      src,
+      title,
+      subtitle: selectedReport.locationName,
+    });
+  }
+
+  function handleComparisonClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (dragMovedRef.current) {
+      dragMovedRef.current = false;
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    if (percentage <= divider) {
+      openImage(beforeImage, "Current condition");
+      return;
+    }
+    openImage(afterImage, "Dream India vision");
+  }
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto grid max-w-[1500px] gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 lg:grid-cols-[360px_minmax(0,1fr)_340px]">
-        <aside className="order-2 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4 lg:order-1">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
+      <section className="mx-auto max-w-[1560px] px-3 py-3 sm:px-4 lg:px-6">
+        <div className="mb-3 overflow-hidden rounded-2xl border border-border bg-card/80 p-3 shadow-sm sm:p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary sm:text-xs">
+                  Dream India Atlas
+                </p>
+                <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 sm:block" />
+                <p className="hidden text-xs text-muted-foreground sm:block">
+                  Evidence to exact-location transformation briefs
+                </p>
+              </div>
+              <h1 className="mt-1 text-balance text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">
+                Show the bad condition, then show the Dream India version.
+              </h1>
+            </div>
+            <div className="grid shrink-0 grid-cols-4 gap-2 lg:w-[430px]">
+              <Metric label="reports" value={stats.reports} />
+              <Metric label="ai-ready" value={stats.aiReady} />
+              <Metric label="planning" value={stats.planning} />
+              <Metric label="votes" value={stats.votes} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_330px]">
+        <aside className="order-2 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-1 xl:self-start">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Field report
+                Exact evidence
               </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-                Dream India from exact evidence
-              </h1>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight">
+                Create a transformation
+              </h2>
             </div>
             <div className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
               <MapPin className="size-5" />
@@ -842,7 +893,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           </p>
         </aside>
 
-        <section className="order-1 flex min-h-0 flex-col gap-3 sm:gap-4 lg:order-2">
+        <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 sm:gap-4 xl:order-2">
           <SourcePreview
             lat={draft.lat}
             lng={draft.lng}
@@ -875,35 +926,10 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
               markAutoDetected(changed);
             }}
             onMessage={setMessage}
+            onImageOpen={setLightboxImage}
           />
 
-          <div className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
-            <div className="hidden rounded-xl border border-border bg-primary p-4 text-primary-foreground shadow-sm xl:block">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
-                Live impact
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <Metric label="reports" value={stats.reports} />
-                <Metric label="ai-ready" value={stats.aiReady} />
-                <Metric label="planning" value={stats.planning} />
-                <Metric label="votes" value={stats.votes} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {planningChecklist.map((item) => (
-                  <div
-                    key={item}
-                    className="flex gap-2 text-sm text-primary-foreground/90"
-                  >
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary-foreground" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="hidden xl:block" />
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -913,12 +939,35 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   {selectedReport.title}
                 </h2>
               </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openImage(beforeImage, "Current condition")}
+                  disabled={!beforeImage}
+                >
+                  <Maximize2 className="size-4" />
+                  Current
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openImage(afterImage, "Dream India vision")}
+                  disabled={!afterImage}
+                >
+                  <Maximize2 className="size-4" />
+                  Vision
+                </Button>
+              </div>
             </div>
             <div
-              className="group relative aspect-[16/10] min-h-[260px] cursor-ew-resize touch-none select-none overflow-hidden bg-muted sm:aspect-[16/8] sm:min-h-[310px]"
+              className="group relative aspect-[16/10] min-h-[280px] cursor-ew-resize touch-none select-none overflow-hidden bg-muted sm:aspect-[16/8] sm:min-h-[360px]"
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
+              onClick={handleComparisonClick}
             >
               {afterImage ? (
                 <img
@@ -979,7 +1028,7 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
           </div>
         </section>
 
-        <aside className="order-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4 lg:order-3">
+        <aside className="order-3 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-3 xl:self-start">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -1017,36 +1066,28 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
                   key={reportKey}
                   type="button"
                   onClick={() => setSelectedReportId(reportKey)}
-                  className={`w-full rounded-lg border p-3 text-left transition ${
+                  className={`w-full overflow-hidden rounded-xl border text-left shadow-sm transition-transform active:scale-[0.99] ${
                     reportKey === getReportId(selectedReport)
                       ? "border-primary bg-primary/10"
-                      : "border-border hover:bg-muted"
+                      : "border-border bg-background hover:bg-muted"
                   }`}
                 >
-                  <div className="flex gap-3">
-                    {report.beforeImageUrl ? (
-                      <img
-                        src={report.beforeImageUrl}
-                        alt=""
-                        className="size-16 rounded-md object-cover"
-                      />
-                    ) : (
-                      <div className="grid size-16 place-items-center rounded-md bg-muted">
-                        <FileImage className="size-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">
-                        {report.title}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                        {report.locationName}
-                      </p>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{report.severity}</span>
-                        <span>/</span>
-                        <span>{reportVotes} votes</span>
-                      </div>
+                  <div className="grid grid-cols-2 gap-px bg-border">
+                    <ThumbImage src={report.beforeImageUrl} label="Current" />
+                    <ThumbImage src={report.afterImageUrl} label="Vision" />
+                  </div>
+                  <div className="p-3">
+                    <p className="truncate text-sm font-semibold">
+                      {report.title}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {report.locationName}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span className="rounded-full border border-border bg-card px-2 py-0.5 capitalize">
+                        {report.severity}
+                      </span>
+                      <span className="tabular-nums">{reportVotes} votes</span>
                     </div>
                   </div>
                 </button>
@@ -1069,42 +1110,6 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
             {displayedSelectedVotes.toLocaleString()} priority votes
           </p>
         </aside>
-      </section>
-
-      <section className="mx-auto max-w-[1500px] px-4 pb-12">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {reports.slice(0, 6).map((report) => (
-            <article
-              key={`grid-${getReportId(report)}`}
-              className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-            >
-              <div className="grid grid-cols-2">
-                <img
-                  src={report.beforeImageUrl || "/assets/road-before.png"}
-                  alt="Before condition"
-                  className="h-36 w-full object-cover"
-                />
-                <img
-                  src={report.afterImageUrl || "/assets/road-after.png"}
-                  alt="After transformation"
-                  className="h-36 w-full object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-base font-semibold">{report.title}</h3>
-                  <span
-                    className={`rounded-md border px-2 py-1 text-xs font-semibold ${issueTypeBadge(report.issueType)}`}
-                  >
-                    {report.issueType}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {report.planningGoal}
-                </p>
-              </div>
-            </article>
-          ))}
         </div>
       </section>
 
@@ -1197,7 +1202,11 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
         onOpenChange={setLoginModalOpen}
         returnUrl="/"
       />
-    </main>
+      <ImageLightbox
+        image={lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
+    </div>
   );
 }
 
@@ -1294,11 +1303,40 @@ function ImageFallback({
   );
 }
 
+function ThumbImage({
+  src,
+  label,
+}: {
+  src?: string | null;
+  label: string;
+}) {
+  return (
+    <div className="relative h-20 bg-muted">
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 size-full object-cover outline outline-1 outline-black/10 dark:outline-white/10"
+        />
+      ) : (
+        <div className="absolute inset-0 grid place-items-center">
+          <FileImage className="size-5 text-muted-foreground" />
+        </div>
+      )}
+      <span className="absolute left-1.5 top-1.5 rounded bg-background/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-foreground backdrop-blur">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border border-primary-foreground/15 bg-primary-foreground/10 p-3">
-      <div className="text-2xl font-semibold">{value.toLocaleString()}</div>
-      <div className="mt-1 text-xs uppercase tracking-[0.16em] text-primary-foreground/75">
+    <div className="rounded-xl border border-border bg-background p-2.5 shadow-sm sm:p-3">
+      <div className="text-xl font-semibold tabular-nums tracking-tight sm:text-2xl">
+        {value.toLocaleString()}
+      </div>
+      <div className="mt-0.5 truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[10px]">
         {label}
       </div>
     </div>

@@ -15,7 +15,6 @@ import {
   Settings,
   Sparkles,
   User2,
-  WandSparkles,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useLoginModal } from "@/hooks/use-login-modal";
@@ -51,17 +50,9 @@ type NavItem = {
 };
 
 const primaryNav: NavItem[] = [
-  { href: "/", label: "Atlas", icon: Home, mobile: true },
+  { href: "/", label: "Dream", icon: Home, mobile: true },
   { href: "/atlas", label: "Map", icon: MapIcon, mobile: true },
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    mobile: true,
-  },
-  { href: "/tutor", label: "Tutor", icon: Sparkles },
-  { href: "/uploads", label: "Uploads", icon: WandSparkles },
-  { href: "/pricing", label: "Pricing", icon: Coins },
+  { href: "/pricing", label: "Pricing", icon: Coins, mobile: true },
 ];
 
 const mobileNav = primaryNav.filter((item) => item.mobile);
@@ -112,7 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <MapPinned className="size-4 sm:size-5" />
             </span>
             <span className="hidden text-base font-semibold tracking-tight sm:inline">
-              cockroachdreamindia
+              Dream India
             </span>
           </Link>
 

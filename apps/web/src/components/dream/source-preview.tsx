@@ -3,11 +3,27 @@
 import { useEffect, useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@convex-starter/backend/convex/_generated/api";
-import { Loader2, MapPin, Navigation, Search, Sparkles } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MapPin,
+  Maximize2,
+  Navigation,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Coords = { lat: number; lng: number };
+
+type LocationSuggestion = {
+  placeId: string | null;
+  lat: number;
+  lng: number;
+  formattedAddress: string | null;
+  locationName: string | null;
+};
 
 type Props = {
   lat: string;
@@ -22,6 +38,11 @@ type Props = {
     locationName: string | null;
   }) => void;
   onMessage: (message: string) => void;
+  onImageOpen?: (args: {
+    src: string;
+    title: string;
+    subtitle?: string;
+  }) => void;
 };
 
 function streetViewSrc(
@@ -57,12 +78,14 @@ export function SourcePreview({
   hasUploadedFile,
   onLocationResolved,
   onMessage,
+  onImageOpen,
 }: Props) {
   const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<LocationSuggestion>>([]);
   const [searching, setSearching] = useState(false);
   const [streetViewError, setStreetViewError] = useState(false);
-  const forwardGeocode = useAction(api.geo.forwardGeocode);
+  const searchLocations = useAction(api.geo.searchLocations);
 
   useEffect(() => {
     setStreetViewError(false);
@@ -81,24 +104,31 @@ export function SourcePreview({
     if (!trimmed) return;
     setSearching(true);
     try {
-      const res = await forwardGeocode({ query: trimmed });
-      if (!res) {
+      const results = await searchLocations({ query: trimmed });
+      setSuggestions(results);
+      if (results.length === 0) {
         onMessage(`No results for "${trimmed}".`);
         return;
       }
-      onLocationResolved({
-        coords: { lat: res.lat, lng: res.lng },
-        formattedAddress: res.formattedAddress,
-        locationName: res.locationName,
-      });
-      onMessage(
-        `Pinned to ${res.locationName ?? res.formattedAddress ?? trimmed}.`,
-      );
+      onMessage(`Choose a source result for "${trimmed}".`);
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Search failed.");
     } finally {
       setSearching(false);
     }
+  }
+
+  function selectSuggestion(suggestion: LocationSuggestion) {
+    onLocationResolved({
+      coords: { lat: suggestion.lat, lng: suggestion.lng },
+      formattedAddress: suggestion.formattedAddress,
+      locationName: suggestion.locationName,
+    });
+    setQuery(suggestion.locationName ?? suggestion.formattedAddress ?? "");
+    setSuggestions([]);
+    onMessage(
+      `Pinned to ${suggestion.locationName ?? suggestion.formattedAddress ?? "selected location"}.`,
+    );
   }
 
   const mapsLink =
@@ -107,8 +137,8 @@ export function SourcePreview({
       : null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-border p-3 sm:p-4">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex flex-col gap-2.5 border-b border-border p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -137,8 +167,8 @@ export function SourcePreview({
         </div>
 
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={(event) => {
+            event.preventDefault();
             runSearch();
           }}
           className="flex gap-2"
@@ -168,16 +198,64 @@ export function SourcePreview({
             <span className="hidden sm:inline">Find</span>
           </Button>
         </form>
+
+        {suggestions.length > 0 && (
+          <div className="grid gap-2 rounded-xl border border-border bg-background p-2 shadow-sm">
+            {suggestions.map((suggestion) => (
+              <button
+                key={
+                  suggestion.placeId ??
+                  `${suggestion.lat.toFixed(5)}-${suggestion.lng.toFixed(5)}`
+                }
+                type="button"
+                onClick={() => selectSuggestion(suggestion)}
+                className="group flex min-h-12 items-start gap-2 rounded-lg px-2 py-2 text-left transition-transform hover:bg-muted active:scale-[0.99]"
+              >
+                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                  <MapPin className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">
+                    {suggestion.locationName ?? "Selected place"}
+                  </span>
+                  {suggestion.formattedAddress && (
+                    <span className="mt-0.5 block line-clamp-1 text-xs text-muted-foreground">
+                      {suggestion.formattedAddress}
+                    </span>
+                  )}
+                </span>
+                <span className="grid size-8 shrink-0 place-items-center rounded-md border border-border text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-primary">
+                  <Check className="size-4" />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
-        <div className="relative aspect-[4/3] bg-muted sm:aspect-[5/4]">
+      <div className="grid min-w-0 grid-cols-1 gap-px bg-border md:grid-cols-2">
+        <div className="relative min-w-0 aspect-[4/3] bg-muted md:aspect-[16/10] lg:aspect-[5/4]">
           {mapSrc ? (
-            <img
-              src={mapSrc}
-              alt="Map of selected location"
-              className="absolute inset-0 size-full object-cover"
-            />
+            <button
+              type="button"
+              onClick={() =>
+                onImageOpen?.({
+                  src: mapSrc,
+                  title: "Selected source map",
+                  subtitle: locationName || address || undefined,
+                })
+              }
+              className="absolute inset-0 size-full overflow-hidden text-left"
+            >
+              <img
+                src={mapSrc}
+                alt="Map of selected location"
+                className="absolute inset-0 size-full object-cover outline outline-1 outline-black/10 dark:outline-white/10"
+              />
+              <span className="absolute right-2 top-2 grid size-8 place-items-center rounded-md bg-background/85 text-foreground shadow-sm backdrop-blur transition-transform active:scale-[0.96]">
+                <Maximize2 className="size-4" />
+              </span>
+            </button>
           ) : (
             <EmptyPanel
               icon={<MapPin className="size-5" />}
@@ -194,14 +272,29 @@ export function SourcePreview({
           </span>
         </div>
 
-        <div className="relative aspect-[4/3] bg-muted sm:aspect-[5/4]">
+        <div className="relative min-w-0 aspect-[4/3] bg-muted md:aspect-[16/10] lg:aspect-[5/4]">
           {sourceImg && !streetViewError ? (
-            <img
-              src={sourceImg}
-              alt="Source photo to be transformed"
-              className="absolute inset-0 size-full object-cover"
-              onError={() => setStreetViewError(true)}
-            />
+            <button
+              type="button"
+              onClick={() =>
+                onImageOpen?.({
+                  src: sourceImg,
+                  title: sourceLabel,
+                  subtitle: locationName || address || undefined,
+                })
+              }
+              className="absolute inset-0 size-full overflow-hidden text-left"
+            >
+              <img
+                src={sourceImg}
+                alt="Source photo to be transformed"
+                className="absolute inset-0 size-full object-cover outline outline-1 outline-black/10 dark:outline-white/10"
+                onError={() => setStreetViewError(true)}
+              />
+              <span className="absolute right-2 top-2 grid size-8 place-items-center rounded-md bg-background/85 text-foreground shadow-sm backdrop-blur transition-transform active:scale-[0.96]">
+                <Maximize2 className="size-4" />
+              </span>
+            </button>
           ) : (
             <EmptyPanel
               icon={<Sparkles className="size-5" />}
