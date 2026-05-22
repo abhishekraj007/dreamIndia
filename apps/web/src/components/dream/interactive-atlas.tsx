@@ -686,430 +686,434 @@ export function InteractiveAtlas({ initialReports, initialStats }: Props) {
         </div>
 
         <div className="grid min-w-0 gap-4 xl:grid-cols-[340px_minmax(0,1fr)_330px]">
-        <aside className="order-2 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-1 xl:self-start">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Exact evidence
-              </p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight">
-                Create a transformation
-              </h2>
-            </div>
-            <div className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <MapPin className="size-5" />
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <UploadLabel icon={<Camera className="size-4" />} label="Camera">
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(event) =>
-                  onFileChange(event.target.files?.[0] ?? null)
-                }
-              />
-            </UploadLabel>
-            <UploadLabel icon={<Upload className="size-4" />} label="Upload">
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/*"
-                onChange={(event) =>
-                  onFileChange(event.target.files?.[0] ?? null)
-                }
-              />
-            </UploadLabel>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 justify-center gap-2"
-              onClick={handleUseStreetView}
-              disabled={!canUseStreetView}
-            >
-              <Layers3 className="size-4" />
-              Street View
-            </Button>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            <AutoFieldShell show={autoDetectedFields.has("title")}>
-              <Input
-                value={draft.title}
-                onChange={(event) => updateDraft("title", event.target.value)}
-                aria-label="Report title"
-              />
-            </AutoFieldShell>
-            <AutoFieldShell show={autoDetectedFields.has("locationName")}>
-              <Input
-                value={draft.locationName}
-                onChange={(event) =>
-                  updateDraft("locationName", event.target.value)
-                }
-                aria-label="Location name"
-              />
-            </AutoFieldShell>
-            <AutoFieldShell show={autoDetectedFields.has("address")}>
-              <Input
-                value={draft.address}
-                onChange={(event) => updateDraft("address", event.target.value)}
-                aria-label="Address"
-                placeholder="Address or landmark"
-              />
-            </AutoFieldShell>
-            <div>
-              {(autoDetectedFields.has("lat") ||
-                autoDetectedFields.has("lng")) && <AutoDetectedPill />}
-              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                <Input
-                  value={draft.lat}
-                  onChange={(event) => updateDraft("lat", event.target.value)}
-                  aria-label="Latitude"
-                  placeholder="Latitude"
-                />
-                <Input
-                  value={draft.lng}
-                  onChange={(event) => updateDraft("lng", event.target.value)}
-                  aria-label="Longitude"
-                  placeholder="Longitude"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={useCurrentLocation}
-                  disabled={isLocating}
-                  aria-label="Use current location"
-                >
-                  {isLocating ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <LocateFixed className="size-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                value={draft.issueType}
-                onChange={(event) =>
-                  updateDraft("issueType", event.target.value as IssueType)
-                }
-                aria-label="Issue type"
-              >
-                {issueOptions.map((issue) => (
-                  <option key={issue.value} value={issue.value}>
-                    {issue.label}
-                  </option>
-                ))}
-              </select>
+          <aside className="order-2 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-1 xl:self-start">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                {autoDetectedFields.has("severity") && <AutoDetectedPill />}
-                <select
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                  value={draft.severity}
-                  onChange={(event) =>
-                    updateDraft("severity", event.target.value as Severity)
-                  }
-                  aria-label="Severity"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </select>
-              </div>
-            </div>
-            <AutoFieldShell show={autoDetectedFields.has("description")}>
-              <textarea
-                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                value={draft.description}
-                onChange={(event) =>
-                  updateDraft("description", event.target.value)
-                }
-                aria-label="Current condition notes"
-              />
-            </AutoFieldShell>
-            <AutoFieldShell show={autoDetectedFields.has("planningGoal")}>
-              <textarea
-                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                value={draft.planningGoal}
-                onChange={(event) =>
-                  updateDraft("planningGoal", event.target.value)
-                }
-                aria-label="Transformation goal"
-              />
-            </AutoFieldShell>
-            <AutoFieldShell show={autoDetectedFields.has("tags")}>
-              <Input
-                value={draft.tags}
-                onChange={(event) => updateDraft("tags", event.target.value)}
-                aria-label="Tags"
-              />
-            </AutoFieldShell>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              onClick={transformImage}
-              disabled={isTransforming}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              {isTransforming ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <WandSparkles className="size-4" />
-              )}
-              {isTransforming ? "Transforming" : "Transform"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={saveReport}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-              {isSaving ? "Saving" : "Save"}
-            </Button>
-          </div>
-          {message && (
-            <p className="mt-4 rounded-md border border-border bg-muted p-3 text-sm text-muted-foreground">
-              {message}
-            </p>
-          )}
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            {session?.user
-              ? `Signed in as ${session.user.email}.`
-              : "Sign in to generate, save, vote, and share reports."}
-          </p>
-        </aside>
-
-        <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 sm:gap-4 xl:order-2">
-          <SourcePreview
-            lat={draft.lat}
-            lng={draft.lng}
-            locationName={draft.locationName}
-            address={draft.address}
-            beforeImage={beforePreview}
-            hasUploadedFile={!!file}
-            onLocationResolved={({
-              coords,
-              formattedAddress,
-              locationName,
-            }) => {
-              const changed: Array<AutoField> = ["lat", "lng"];
-              setDraft((current) => {
-                const next = {
-                  ...current,
-                  lat: coords.lat.toFixed(6),
-                  lng: coords.lng.toFixed(6),
-                };
-                if (locationName) {
-                  next.locationName = locationName;
-                  changed.push("locationName");
-                }
-                if (formattedAddress) {
-                  next.address = formattedAddress;
-                  changed.push("address");
-                }
-                return next;
-              });
-              markAutoDetected(changed);
-            }}
-            onMessage={setMessage}
-            onImageOpen={setLightboxImage}
-          />
-
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Before / Dream India after
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Exact evidence
                 </p>
-                <h2 className="text-xl font-semibold">
-                  {selectedReport.title}
+                <h2 className="mt-1 text-xl font-semibold tracking-tight">
+                  Create a transformation
                 </h2>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openImage(beforeImage, "Current condition")}
-                  disabled={!beforeImage}
-                >
-                  <Maximize2 className="size-4" />
-                  Current
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openImage(afterImage, "Dream India vision")}
-                  disabled={!afterImage}
-                >
-                  <Maximize2 className="size-4" />
-                  Vision
-                </Button>
+              <div className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground">
+                <MapPin className="size-5" />
               </div>
             </div>
-            <div
-              className="group relative aspect-[16/10] min-h-[280px] cursor-ew-resize touch-none select-none overflow-hidden bg-muted sm:aspect-[16/8] sm:min-h-[360px]"
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onClick={handleComparisonClick}
-            >
-              {afterImage ? (
-                <img
-                  src={afterImage}
-                  alt="Dream India transformed condition"
-                  className="pointer-events-none absolute inset-0 size-full object-cover"
+
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <UploadLabel icon={<Camera className="size-4" />} label="Camera">
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(event) =>
+                    onFileChange(event.target.files?.[0] ?? null)
+                  }
                 />
-              ) : (
-                <ImageFallback label="After image pending" />
-              )}
-              {beforeImage ? (
-                <img
-                  src={beforeImage}
-                  alt="Current bad infrastructure condition"
-                  className="pointer-events-none absolute inset-0 size-full object-cover"
-                  style={{ clipPath: `inset(0 ${100 - divider}% 0 0)` }}
+              </UploadLabel>
+              <UploadLabel icon={<Upload className="size-4" />} label="Upload">
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    onFileChange(event.target.files?.[0] ?? null)
+                  }
                 />
-              ) : (
-                <ImageFallback
-                  label="Before image pending"
-                  clipped
-                  divider={divider}
-                />
-              )}
-              <div
-                className="pointer-events-none absolute bottom-0 top-0 w-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]"
-                style={{ left: `${divider}%` }}
-              />
-              <div
-                className="pointer-events-none absolute top-1/2 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/25 text-white shadow-xl backdrop-blur transition-transform duration-100 group-hover:scale-105"
-                style={{ left: `${divider}%` }}
-              >
-                <Layers3 className="size-4" />
-              </div>
-              <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/65 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-                Current
-              </div>
-              <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground">
-                Vision
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                {selectedReport._id
-                  ? "Live community report"
-                  : "Interactive demo report"}
-              </span>
+              </UploadLabel>
               <Button
                 type="button"
-                size="sm"
-                onClick={handleGenerateProposal}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                variant="outline"
+                className="h-12 justify-center gap-2"
+                onClick={handleUseStreetView}
+                disabled={!canUseStreetView}
               >
-                <FileText className="size-4" />
-                Generate AI Planning Proposal
+                <Layers3 className="size-4" />
+                Street View
               </Button>
             </div>
-          </div>
-        </section>
 
-        <aside className="order-3 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-3 xl:self-start">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Exact bad conditions
-              </p>
-              <h2 className="text-xl font-semibold">Transformation atlas</h2>
-            </div>
-            <Route className="size-5 text-primary" />
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <IssueFilterButton
-              active={selectedIssue === "all"}
-              onClick={() => setSelectedIssue("all")}
-            >
-              All
-            </IssueFilterButton>
-            {issueOptions.map((issue) => (
-              <IssueFilterButton
-                key={issue.value}
-                active={selectedIssue === issue.value}
-                onClick={() => setSelectedIssue(issue.value)}
-              >
-                {issue.label}
-              </IssueFilterButton>
-            ))}
-          </div>
-          <div className="mt-4 space-y-3">
-            {reports.map((report) => {
-              const reportKey = getReportId(report);
-              const reportVotes = report._id
-                ? (optimisticVotes[report._id]?.votes ?? report.votes)
-                : report.votes;
-              return (
-                <button
-                  key={reportKey}
-                  type="button"
-                  onClick={() => setSelectedReportId(reportKey)}
-                  className={`w-full overflow-hidden rounded-xl border text-left shadow-sm transition-transform active:scale-[0.99] ${
-                    reportKey === getReportId(selectedReport)
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-background hover:bg-muted"
-                  }`}
+            <div className="mt-5 space-y-3">
+              <AutoFieldShell show={autoDetectedFields.has("title")}>
+                <Input
+                  value={draft.title}
+                  onChange={(event) => updateDraft("title", event.target.value)}
+                  aria-label="Report title"
+                />
+              </AutoFieldShell>
+              <AutoFieldShell show={autoDetectedFields.has("locationName")}>
+                <Input
+                  value={draft.locationName}
+                  onChange={(event) =>
+                    updateDraft("locationName", event.target.value)
+                  }
+                  aria-label="Location name"
+                />
+              </AutoFieldShell>
+              <AutoFieldShell show={autoDetectedFields.has("address")}>
+                <Input
+                  value={draft.address}
+                  onChange={(event) =>
+                    updateDraft("address", event.target.value)
+                  }
+                  aria-label="Address"
+                  placeholder="Address or landmark"
+                />
+              </AutoFieldShell>
+              <div>
+                {(autoDetectedFields.has("lat") ||
+                  autoDetectedFields.has("lng")) && <AutoDetectedPill />}
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <Input
+                    value={draft.lat}
+                    onChange={(event) => updateDraft("lat", event.target.value)}
+                    aria-label="Latitude"
+                    placeholder="Latitude"
+                  />
+                  <Input
+                    value={draft.lng}
+                    onChange={(event) => updateDraft("lng", event.target.value)}
+                    aria-label="Longitude"
+                    placeholder="Longitude"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={useCurrentLocation}
+                    disabled={isLocating}
+                    aria-label="Use current location"
+                  >
+                    {isLocating ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <LocateFixed className="size-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                  value={draft.issueType}
+                  onChange={(event) =>
+                    updateDraft("issueType", event.target.value as IssueType)
+                  }
+                  aria-label="Issue type"
                 >
-                  <div className="grid grid-cols-2 gap-px bg-border">
-                    <ThumbImage src={report.beforeImageUrl} label="Current" />
-                    <ThumbImage src={report.afterImageUrl} label="Vision" />
-                  </div>
-                  <div className="p-3">
-                    <p className="truncate text-sm font-semibold">
-                      {report.title}
-                    </p>
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                      {report.locationName}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span className="rounded-full border border-border bg-card px-2 py-0.5 capitalize">
-                        {report.severity}
-                      </span>
-                      <span className="tabular-nums">{reportVotes} votes</span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <Button
-            type="button"
-            variant={displayedSelectedVoted ? "default" : "outline"}
-            className="mt-4 w-full"
-            disabled={!selectedReport._id}
-            onClick={handleVote}
-          >
-            <Vote
-              className={`size-4 ${displayedSelectedVoted ? "fill-current" : ""}`}
+                  {issueOptions.map((issue) => (
+                    <option key={issue.value} value={issue.value}>
+                      {issue.label}
+                    </option>
+                  ))}
+                </select>
+                <div>
+                  {autoDetectedFields.has("severity") && <AutoDetectedPill />}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                    value={draft.severity}
+                    onChange={(event) =>
+                      updateDraft("severity", event.target.value as Severity)
+                    }
+                    aria-label="Severity"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <AutoFieldShell show={autoDetectedFields.has("description")}>
+                <textarea
+                  className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  value={draft.description}
+                  onChange={(event) =>
+                    updateDraft("description", event.target.value)
+                  }
+                  aria-label="Current condition notes"
+                />
+              </AutoFieldShell>
+              <AutoFieldShell show={autoDetectedFields.has("planningGoal")}>
+                <textarea
+                  className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  value={draft.planningGoal}
+                  onChange={(event) =>
+                    updateDraft("planningGoal", event.target.value)
+                  }
+                  aria-label="Transformation goal"
+                />
+              </AutoFieldShell>
+              <AutoFieldShell show={autoDetectedFields.has("tags")}>
+                <Input
+                  value={draft.tags}
+                  onChange={(event) => updateDraft("tags", event.target.value)}
+                  aria-label="Tags"
+                />
+              </AutoFieldShell>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                onClick={transformImage}
+                disabled={isTransforming}
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                {isTransforming ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <WandSparkles className="size-4" />
+                )}
+                {isTransforming ? "Transforming" : "Transform"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={saveReport}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                {isSaving ? "Saving" : "Save"}
+              </Button>
+            </div>
+            {message && (
+              <p className="mt-4 rounded-md border border-border bg-muted p-3 text-sm text-muted-foreground">
+                {message}
+              </p>
+            )}
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+              {session?.user
+                ? `Signed in as ${session.user.email}.`
+                : "Sign in to generate, save, vote, and share reports."}
+            </p>
+          </aside>
+
+          <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 sm:gap-4 xl:order-2">
+            <SourcePreview
+              lat={draft.lat}
+              lng={draft.lng}
+              locationName={draft.locationName}
+              address={draft.address}
+              beforeImage={beforePreview}
+              hasUploadedFile={!!file}
+              onLocationResolved={({
+                coords,
+                formattedAddress,
+                locationName,
+              }) => {
+                const changed: Array<AutoField> = ["lat", "lng"];
+                setDraft((current) => {
+                  const next = {
+                    ...current,
+                    lat: coords.lat.toFixed(6),
+                    lng: coords.lng.toFixed(6),
+                  };
+                  if (locationName) {
+                    next.locationName = locationName;
+                    changed.push("locationName");
+                  }
+                  if (formattedAddress) {
+                    next.address = formattedAddress;
+                    changed.push("address");
+                  }
+                  return next;
+                });
+                markAutoDetected(changed);
+              }}
+              onMessage={setMessage}
+              onImageOpen={setLightboxImage}
             />
-            {displayedSelectedVoted ? "Voted" : "Vote for priority"}
-          </Button>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            {displayedSelectedVotes.toLocaleString()} priority votes
-          </p>
-        </aside>
+
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Before / Dream India after
+                  </p>
+                  <h2 className="text-xl font-semibold">
+                    {selectedReport.title}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openImage(beforeImage, "Current condition")}
+                    disabled={!beforeImage}
+                  >
+                    <Maximize2 className="size-4" />
+                    Current
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openImage(afterImage, "Dream India vision")}
+                    disabled={!afterImage}
+                  >
+                    <Maximize2 className="size-4" />
+                    Vision
+                  </Button>
+                </div>
+              </div>
+              <div
+                className="group relative aspect-[16/10] min-h-[280px] cursor-ew-resize touch-none select-none overflow-hidden bg-muted sm:aspect-[16/8] sm:min-h-[360px]"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onClick={handleComparisonClick}
+              >
+                {afterImage ? (
+                  <img
+                    src={afterImage}
+                    alt="Dream India transformed condition"
+                    className="pointer-events-none absolute inset-0 size-full object-cover"
+                  />
+                ) : (
+                  <ImageFallback label="After image pending" />
+                )}
+                {beforeImage ? (
+                  <img
+                    src={beforeImage}
+                    alt="Current bad infrastructure condition"
+                    className="pointer-events-none absolute inset-0 size-full object-cover"
+                    style={{ clipPath: `inset(0 ${100 - divider}% 0 0)` }}
+                  />
+                ) : (
+                  <ImageFallback
+                    label="Before image pending"
+                    clipped
+                    divider={divider}
+                  />
+                )}
+                <div
+                  className="pointer-events-none absolute bottom-0 top-0 w-0.5 bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]"
+                  style={{ left: `${divider}%` }}
+                />
+                <div
+                  className="pointer-events-none absolute top-1/2 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/25 text-white shadow-xl backdrop-blur transition-transform duration-100 group-hover:scale-105"
+                  style={{ left: `${divider}%` }}
+                >
+                  <Layers3 className="size-4" />
+                </div>
+                <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/65 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+                  Current
+                </div>
+                <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground">
+                  Vision
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {selectedReport._id
+                    ? "Live community report"
+                    : "Interactive demo report"}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleGenerateProposal}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <FileText className="size-4" />
+                  Generate AI Planning Proposal
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <aside className="order-3 min-w-0 rounded-2xl border border-border bg-card/95 p-3 shadow-sm sm:p-4 xl:sticky xl:top-20 xl:order-3 xl:self-start">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Exact bad conditions
+                </p>
+                <h2 className="text-xl font-semibold">Transformation atlas</h2>
+              </div>
+              <Route className="size-5 text-primary" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <IssueFilterButton
+                active={selectedIssue === "all"}
+                onClick={() => setSelectedIssue("all")}
+              >
+                All
+              </IssueFilterButton>
+              {issueOptions.map((issue) => (
+                <IssueFilterButton
+                  key={issue.value}
+                  active={selectedIssue === issue.value}
+                  onClick={() => setSelectedIssue(issue.value)}
+                >
+                  {issue.label}
+                </IssueFilterButton>
+              ))}
+            </div>
+            <div className="mt-4 space-y-3">
+              {reports.map((report) => {
+                const reportKey = getReportId(report);
+                const reportVotes = report._id
+                  ? (optimisticVotes[report._id]?.votes ?? report.votes)
+                  : report.votes;
+                return (
+                  <button
+                    key={reportKey}
+                    type="button"
+                    onClick={() => setSelectedReportId(reportKey)}
+                    className={`w-full overflow-hidden rounded-xl border text-left shadow-sm transition-transform active:scale-[0.99] ${
+                      reportKey === getReportId(selectedReport)
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background hover:bg-muted"
+                    }`}
+                  >
+                    <div className="grid grid-cols-2 gap-px bg-border">
+                      <ThumbImage src={report.beforeImageUrl} label="Current" />
+                      <ThumbImage src={report.afterImageUrl} label="Vision" />
+                    </div>
+                    <div className="p-3">
+                      <p className="truncate text-sm font-semibold">
+                        {report.title}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                        {report.locationName}
+                      </p>
+                      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="rounded-full border border-border bg-card px-2 py-0.5 capitalize">
+                          {report.severity}
+                        </span>
+                        <span className="tabular-nums">
+                          {reportVotes} votes
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              type="button"
+              variant={displayedSelectedVoted ? "default" : "outline"}
+              className="mt-4 w-full"
+              disabled={!selectedReport._id}
+              onClick={handleVote}
+            >
+              <Vote
+                className={`size-4 ${displayedSelectedVoted ? "fill-current" : ""}`}
+              />
+              {displayedSelectedVoted ? "Voted" : "Vote for priority"}
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {displayedSelectedVotes.toLocaleString()} priority votes
+            </p>
+          </aside>
         </div>
       </section>
 
@@ -1303,13 +1307,7 @@ function ImageFallback({
   );
 }
 
-function ThumbImage({
-  src,
-  label,
-}: {
-  src?: string | null;
-  label: string;
-}) {
+function ThumbImage({ src, label }: { src?: string | null; label: string }) {
   return (
     <div className="relative h-20 bg-muted">
       {src ? (

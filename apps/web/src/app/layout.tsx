@@ -17,8 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3004";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3004";
 
 export const metadata: Metadata = {
   title: {
@@ -80,7 +79,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} dir={isRTL(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={isRTL(locale) ? "rtl" : "ltr"}
+      suppressHydrationWarning
+    >
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >

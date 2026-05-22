@@ -49,11 +49,22 @@ export function ImageLightbox({ image, onClose }: Props) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button type="button" variant="outline" size="icon" asChild>
-            <a href={image.src} target="_blank" rel="noreferrer" aria-label="Open image in new tab">
+            <a
+              href={image.src}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open image in new tab"
+            >
               <ExternalLink className="size-4" />
             </a>
           </Button>
-          <Button type="button" variant="outline" size="icon" onClick={onClose} aria-label="Close image viewer">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close image viewer"
+          >
             <X className="size-4" />
           </Button>
         </div>
