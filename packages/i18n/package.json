@@ -1,0 +1,13 @@
+{
+  "name": "@convex-starter/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./messages/en": "./messages/en.json",
+    "./messages/es": "./messages/es.json",
+    "./messages/fr": "./messages/fr.json"
+  }
+}

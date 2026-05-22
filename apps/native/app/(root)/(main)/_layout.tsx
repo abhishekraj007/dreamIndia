@@ -1,0 +1,74 @@
+import { Stack } from "expo-router";
+import { useNavigationOptions } from "@/hooks/useNavigationOptions";
+import { useAppTheme } from "@/contexts/app-theme-context";
+
+export default function MainLayout() {
+  const { standard } = useNavigationOptions();
+  const { isDark } = useAppTheme();
+
+  return (
+    <Stack initialRouteName="(tabs)">
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="index"
+        options={{
+          ...standard,
+          title: "Home",
+          headerTitle: "",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="buy-credits"
+        options={{
+          title: "",
+          presentation: "modal",
+          headerTitle: "",
+          headerBackTitle: "Back",
+          // headerShown: false,
+          ...standard,
+        }}
+      />
+      <Stack.Screen
+        name="account"
+        options={{
+          title: "Account",
+          presentation: "modal",
+          headerBackButtonDisplayMode: "generic",
+          headerBlurEffect: isDark ? "dark" : "light",
+          headerBackTitle: "Back",
+          ...standard,
+        }}
+      />
+      <Stack.Screen
+        name="features"
+        options={{
+          title: "Features",
+          headerBackTitle: "Back",
+          ...standard,
+        }}
+      />
+      <Stack.Screen
+        name="uploads"
+        options={{
+          title: "Uploads",
+          headerBackTitle: "Back",
+          ...standard,
+        }}
+      />
+      <Stack.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          headerBackTitle: "Back",
+          ...standard,
+        }}
+      />
+    </Stack>
+  );
+}

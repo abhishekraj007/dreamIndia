@@ -1,0 +1,15 @@
+import { createAuthClient } from "better-auth/react";
+import {
+  convexClient,
+  crossDomainClient,
+} from "@convex-dev/better-auth/client/plugins";
+import { polarClient } from "@polar-sh/better-auth";
+
+// Use crossDomainClient plugin for multi-app OAuth (handles cross-domain cookie storage)
+// baseURL points to Convex site where auth API is hosted
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
+  plugins: [convexClient(), crossDomainClient(), polarClient()],
+});
+
+export type AuthClient = typeof authClient;

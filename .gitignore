@@ -1,0 +1,74 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env*.local
+
+# IDEs and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Turbo
+.turbo
+
+# Better-T-Stack
+.alchemy
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.tgz
+.cache
+tmp
+temp
+
+# Skills directories (symlinks, embedded repos, and cloned skills)
+.agent/skills/agent-skills/
+skills/
+
+# Symlinked skills (actual content is in .agents/skills/)
+.agent/skills/building-native-ui
+.agent/skills/convex
+.agent/skills/vercel-react-best-practices
+.agent/skills/vercel-react-native-skills
+.cursor/skills/building-native-ui
+.cursor/skills/convex
+.cursor/skills/vercel-react-best-practices
+.cursor/skills/vercel-react-native-skills
+.claude/skills/
+.codex/skills/
+.gemini/skills/
+.github/skills/
+.windsurf/skills/
+
+.apk
+.ipa
+.aab
+*.p8

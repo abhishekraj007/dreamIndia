@@ -1,0 +1,95 @@
+"use client";
+import Link from "next/link";
+import { ModeToggle } from "./mode-toggle";
+import UserMenu from "./user-menu";
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@convex-starter/backend/convex/_generated/api";
+import { Menu } from "lucide-react";
+import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
+
+export default function Header() {
+  const router = useRouter();
+  const userData = useQuery(api.user.fetchUserAndProfile);
+  const isPremium = Boolean(userData?.profile?.isPremium);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const links = [
+    { to: "/dashboard", label: "Dashboard" },
+    { to: "/uploads", label: "Uploads" },
+    { to: "/app-config", label: "App Config" },
+    { to: "/notifications", label: "Notifications" },
+    { to: "/settings", label: "Settings" },
+  ] as const;
+
+  return (
+    <div className="sticky top-0 z-50 bg-background">
+      <div className="flex flex-row items-center justify-between px-4 py-3 border-b border-border">
+        {/* Mobile Menu Toggle */}
+        <div className="flex items-center gap-4">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 px-4">
+                {links.map(({ to, label }) => (
+                  <Link
+                    key={to}
+                    href={to}
+                    className="text-lg hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex gap-6 text-sm font-medium">
+            {links.map(({ to, label }) => {
+              return (
+                <Link
+                  key={to}
+                  href={to}
+                  className="hover:text-primary transition-colors"
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+
+          {userData ? (
+            <UserMenu isPremium={isPremium} />
+          ) : (
+            <Button onClick={() => router.push("/")} size="sm">
+              Login
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

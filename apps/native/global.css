@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "uniwind";
+@import "heroui-native/styles";
+
+@import "./themes/lavander.css";
+@import "./themes/mint.css";
+@import "./themes/sky.css";
+
+@theme {
+  --font-normal: "Inter_400Regular";
+  --font-medium: "Inter_500Medium";
+  --font-semibold: "Inter_600SemiBold";
+}
+
+@variant light {
+  /* button theme */
+  --accent: oklch(0.65 0.25 270);
+  --accent: oklch(0.65 0.25 123);
+  --divider: var(--separator);
+}
+
+@variant dark {
+  --accent: oklch(0.65 0.25 123);
+  --background: oklch(0.15 0 0);
+  --divider: var(--separator);
+}
+
+@source '../../node_modules/heroui-native/lib';
